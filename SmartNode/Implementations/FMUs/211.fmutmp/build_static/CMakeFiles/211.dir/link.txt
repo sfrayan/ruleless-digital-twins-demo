@@ -1,0 +1,3 @@
+"C:\Program Files\OpenModelica1.26.3-64bit\tools\msys\ucrt64\bin\cmake.exe" -E rm -f CMakeFiles\211.dir/objects.a
+C:\PROGRA~1\OPENMO~1.3-6\tools\msys\ucrt64\bin\ar.exe qc CMakeFiles\211.dir/objects.a @CMakeFiles\211.dir\objects1.rsp
+C:\PROGRA~1\OPENMO~1.3-6\tools\msys\ucrt64\bin\cc.exe -O3 -DNDEBUG -Wl,--no-undefined -static-libgcc -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic -shared -o OfficeTwin.dll -Wl,--out-implib,libOfficeTwin.dll.a -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles\211.dir/objects.a -Wl,--no-whole-archive @CMakeFiles\211.dir\linkLibs.rsp

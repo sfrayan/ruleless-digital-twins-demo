@@ -1,0 +1,21 @@
+
+<h1>OfficeTwin</h1>
+<p> <i>Physical twin of a Nordic office room (temperature + humidity dynamics).
+   Designed for use with the ruleless-digital-twins MAPE-K loop.
+
+   Inputs  (set by SmartNode after initialization):
+     HeaterActuator        - electric panel heater  (0=off, 1=on)
+     FloorHeatingActuator  - hydronic floor heating (0=off, 1=on)
+     DehumidifierActuator  - dehumidifier           (0=off, 1=on)
+
+   Outputs (matched to PropertyCache via URI EndsWith):
+     Temperature  -> ha:OfficeTemperature  [degC]
+     Humidity     -> ha:OfficeHumidity     [% RH]
+
+   Room: 4 m x 5 m x 2.7 m = 54 m3, Nordic winter, T_out = -5 degC.
+  </i> </p>
+<h4> <u> Information </u> </h4><html>
+      <p>Nordic office twin for ruleless-digital-twins MAPE-K loop.</p>
+      <p>See model header for full parameter documentation.</p>
+    </html>
+<h4> <u> Revisions </u> </h4>

@@ -1,0 +1,54 @@
+EXPORTS
+  ;***************************************************
+  ;Common Functions
+  ;****************************************************
+  OfficeTwin_fmiGetTypesPlatform @1
+  OfficeTwin_fmiGetVersion @2
+  OfficeTwin_fmiSetDebugLogging @3
+  OfficeTwin_fmiInstantiate @4
+  OfficeTwin_fmiFreeInstance @5
+  OfficeTwin_fmiSetupExperiment @6
+  OfficeTwin_fmiEnterInitializationMode @7
+  OfficeTwin_fmiExitInitializationMode @8
+  OfficeTwin_fmiTerminate @9
+  OfficeTwin_fmiReset @10
+  OfficeTwin_fmiGetReal @11
+  OfficeTwin_fmiGetInteger @12
+  OfficeTwin_fmiGetBoolean @13
+  OfficeTwin_fmiGetString @14
+  OfficeTwin_fmiSetReal @15
+  OfficeTwin_fmiSetInteger @16
+  OfficeTwin_fmiSetBoolean @17
+  OfficeTwin_fmiSetString @18
+  OfficeTwin_fmiGetFMUstate @19
+  OfficeTwin_fmiSetFMUstate @20
+  OfficeTwin_fmiFreeFMUstate @21
+  OfficeTwin_fmiSerializedFMUstateSize @22
+  OfficeTwin_fmiSerializeFMUstate @23
+  OfficeTwin_fmiDeSerializeFMUstate @24
+  OfficeTwin_fmiGetDirectionalDerivative @25
+  ;***************************************************
+  ;Functions for FMI for Model Exchange
+  ;****************************************************
+  OfficeTwin_fmiEnterEventMode @26
+  OfficeTwin_fmiNewDiscreteStates @27
+  OfficeTwin_fmiEnterContinuousTimeMode @28
+  OfficeTwin_fmiCompletedIntegratorStep @29
+  OfficeTwin_fmiSetTime @30
+  OfficeTwin_fmiSetContinuousStates @31
+  OfficeTwin_fmiGetDerivatives @32
+  OfficeTwin_fmiGetEventIndicators @33
+  OfficeTwin_fmiGetContinuousStates @34
+  OfficeTwin_fmiGetNominalsOfContinuousStates @35
+  ;***************************************************
+  ;Functions for FMI for Co-Simulation
+  ;****************************************************
+  OfficeTwin_fmiSetRealInputDerivatives @36
+  OfficeTwin_fmiGetRealOutputDerivatives @37
+  OfficeTwin_fmiDoStep @38
+  OfficeTwin_fmiCancelStep @39
+  OfficeTwin_fmiGetStatus @40
+  OfficeTwin_fmiGetRealStatus @41
+  OfficeTwin_fmiGetIntegerStatus @42
+  OfficeTwin_fmiGetBooleanStatus @43
+  OfficeTwin_fmiGetStringStatus @44

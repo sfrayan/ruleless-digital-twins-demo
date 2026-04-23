@@ -10,6 +10,9 @@ using Implementations.Sensors.Incubator;
 using Implementations.Actuators.Incubator;
 using Implementations.SimulatedTwinningTargets;
 using Implementations.Sensors.Fakepool;
+using Implementations.Sensors.HomeAssistant;
+using Implementations.Actuators.HomeAssistant;
+using System.Net.Http.Headers;
 
 namespace SmartNode
 {
@@ -26,7 +29,7 @@ namespace SmartNode
         public readonly Dictionary<string, SensorActuatorMapWrapper> _sensorActuatorMaps;
         private Dictionary<string, SensorActuatorMapWrapper> MakeSensorMap()
         {
-            return new Dictionary<string, SensorActuatorMapWrapper>(){
+            var map = new Dictionary<string, SensorActuatorMapWrapper>(){
                 {
                     "incubator",
                     new SensorActuatorMapWrapper {
@@ -205,6 +208,65 @@ namespace SmartNode
                     }
                 }
             };
+
+            if (_haHttpClient != null) {
+                map.Add("homeassistant", new SensorActuatorMapWrapper {
+                    SensorMap = new() {
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor1",
+                             "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor1Procedure"),
+                            new HomeAssistantSensor(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor1",
+                                "input_number.office_temperature_sensor1",
+                                null, _haHttpClient)
+                        },
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor2",
+                             "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor2Procedure"),
+                            new HomeAssistantSensor(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor2",
+                                "input_number.office_temperature_sensor2",
+                                null, _haHttpClient)
+                        },
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/HumiditySensor",
+                             "http://www.semanticweb.org/rayan/ontologies/2025/ha/HumiditySensorProcedure"),
+                            new HomeAssistantSensor(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/HumiditySensor",
+                                "input_number.office_humidity_raw",
+                                null, _haHttpClient)
+                        }
+                    },
+                    ActuatorMap = new() {
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/HeaterActuator",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/HeaterActuator",
+                                "input_select.office_heater_state",
+                                HomeAssistantActuator.ActuatorKind.InputSelect,
+                                _haHttpClient, "heat")
+                        },
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/FloorHeatingActuator",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/FloorHeatingActuator",
+                                "input_boolean.office_floor_heating_state",
+                                HomeAssistantActuator.ActuatorKind.InputBoolean,
+                                _haHttpClient)
+                        },
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/DehumidifierActuator",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/DehumidifierActuator",
+                                "input_boolean.office_dehumidifier_state",
+                                HomeAssistantActuator.ActuatorKind.InputBoolean,
+                                _haHttpClient)
+                        }
+                    }
+                });
+            }
+
+            return map;
         }
 
         private readonly Dictionary<string, IConfigurableParameter> _configurableParameters = new() {
@@ -228,8 +290,11 @@ namespace SmartNode
             { "http://www.w3.org/2001/XMLSchema#boolean", new BooleanValueHandler() }
         };
         private readonly IncubatorAdapter? _incubatorAdapter;
+        private HttpClient? _haHttpClient;
         // Changing the environment variable's value requires restarting Visual Studio before it's visible.
         private const string HostNameEnvironmentVariableName = "AU_INCUBATOR_RABBITMQ_HOST_NAME";
+        private const string HaTokenEnvVarName = "TOKEN_HA";
+        private const string HaBaseUrl = "http://localhost:8123/";
 
         public Factory(string dummyEnvironment) {
             _environment = dummyEnvironment;
@@ -243,6 +308,13 @@ namespace SmartNode
                     await _incubatorAdapter.Setup();
                 });
                 t.Wait();
+            }
+
+            if ("homeassistant".Equals(_environment)) {
+                var token = Environment.GetEnvironmentVariable(HaTokenEnvVarName) ?? string.Empty;
+                _haHttpClient = new HttpClient { BaseAddress = new Uri(HaBaseUrl) };
+                _haHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                _haHttpClient.DefaultRequestHeaders.Add("User-Agent", "SmartNode/1.0");
             }
 
             _sensorActuatorMaps = MakeSensorMap();

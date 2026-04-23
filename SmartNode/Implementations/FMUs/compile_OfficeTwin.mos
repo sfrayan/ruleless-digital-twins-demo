@@ -1,0 +1,5 @@
+// OpenModelica script — compile OfficeTwin.mo to FMU 2.0 Co-Simulation
+loadFile("OfficeTwin.mo");
+getErrorString();
+translateModelFMU(OfficeTwin, version="2.0", fmuType="cs", fileNamePrefix="OfficeTwin");
+getErrorString();

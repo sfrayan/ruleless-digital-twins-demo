@@ -1,4 +1,4 @@
-﻿using Logic.Models.MapekModels;
+using Logic.Models.MapekModels;
 using Logic.Models.OntologicalModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -6,72 +6,94 @@ using Microsoft.Extensions.Logging;
 namespace Logic.Mapek {
     public class BangBangPlanner : IBangBangPlanner {
         private readonly ILogger<IBangBangPlanner> _logger;
+        private readonly IMapekKnowledge _mapekKnowledge;
 
-        // Hard-coded OptimalConditions bounds help avoid unnecessary ontological expression complexity. These reflect the same OptimalConditions present in the M370
-        // instance model and are enough for this proof of concept.
-        private const double MaximumOfficeTemperature = 22.0;
-        private const double MinimumOfficeTemperature = 18.0;
-        private const double MaximumOfficeHumidity = 50.0;
-        private const double MinimumOfficeHumidity = 30.0;
-
-        private const string HeaterName = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#Heater";
-        private const string FloorHeatingName = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#FloorHeating";
-        private const string DehumidifierName = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#Dehumidifier";
-        private const string RoomTemperatureName = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#RoomTemperature";
-        private const string RoomHumidityName = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#RoomHumidity";
+        private const string ValueIncreaseUri = "http://www.semanticweb.org/ivans/ontologies/2025/ruleless-digital-twins/ValueIncrease";
 
         public BangBangPlanner(IServiceProvider serviceProvider) {
             _logger = serviceProvider.GetRequiredService<ILogger<IBangBangPlanner>>();
+            _mapekKnowledge = serviceProvider.GetRequiredService<IMapekKnowledge>();
         }
 
         public Simulation Plan(Cache cache) {
             _logger.LogInformation("Firing the bang-bang controller.");
 
-            var heater = cache.Actuators[HeaterName];
-            var floorHeating = cache.Actuators[FloorHeatingName];
-            var dehumidifier = cache.Actuators[DehumidifierName];
+            // Query actuator → property → direction (ValueIncrease / ValueDecrease).
+            var query = _mapekKnowledge.GetParameterizedStringQuery(@"SELECT ?actuator ?property ?direction WHERE {
+                ?actuator rdf:type sosa:Actuator .
+                ?actuator meta:enacts ?propertyChange .
+                ?propertyChange ssn:forProperty ?property .
+                ?propertyChange meta:affectsPropertyWith ?direction . }");
 
-            var officeTemperature = (double)cache.PropertyCache.Properties[RoomTemperatureName].Value;
-            var officeHumidity = (double)cache.PropertyCache.Properties[RoomHumidityName].Value;
-
-            if (officeTemperature >= MaximumOfficeTemperature) {
-                heater.State = 0;
-                floorHeating.State = 0;
-            } else if (officeTemperature <= MinimumOfficeTemperature) {
-                heater.State = 1;
-                floorHeating.State = 1;
+            var mappings = new Dictionary<string, (string propertyUri, bool isIncrease)>();
+            foreach (var row in _mapekKnowledge.ExecuteQuery(query).Results) {
+                var actuatorUri = row["actuator"].ToString();
+                var propertyUri = row["property"].ToString();
+                var isIncrease  = row["direction"].ToString() == ValueIncreaseUri;
+                // If an actuator enacts multiple PropertyChanges, last one wins — acceptable for now.
+                mappings[actuatorUri] = (propertyUri, isIncrease);
             }
 
-            if (officeHumidity >= MaximumOfficeHumidity) {
-                dehumidifier.State = 1;
-            } else if (officeHumidity <= MinimumOfficeHumidity) {
-                dehumidifier.State = 0;
-            }
+            var actions = new List<Models.OntologicalModels.Action>();
 
-            // Although we plan Actions with a simulation, we can't estimate their outcomes like we can with the ruleless method. The cache will thus remain as it is.
-            var simulation = new Simulation(cache.PropertyCache) {
-                Actions = new List<Models.OntologicalModels.Action>() {
-                    new ActuationAction {
-                        Name = "Heater_" + heater.State!.ToString(),
-                        Actuator = heater,
-                        NewStateValue = heater.State
-                    },
-                    new ActuationAction {
-                        Name = "FloorHeating_" + floorHeating.State!.ToString(),
-                        Actuator = floorHeating,
-                        NewStateValue = floorHeating.State
-                    },
-                    new ActuationAction {
-                        Name = "Dehumidifier_" + dehumidifier.State!.ToString(),
-                        Actuator = dehumidifier,
-                        NewStateValue = dehumidifier.State
+            foreach (var (actuatorUri, actuator) in cache.Actuators) {
+                var newState = 0;
+
+                if (mappings.TryGetValue(actuatorUri, out var mapping) &&
+                    cache.PropertyCache.Properties.TryGetValue(mapping.propertyUri, out var property)) {
+
+                    var currentValue = Convert.ToDouble(property.Value);
+                    var oc = cache.OptimalConditions.FirstOrDefault(o => o.Property.Name == mapping.propertyUri);
+
+                    if (oc is not null) {
+                        var (tooLow, tooHigh) = IsViolated(currentValue, oc.ConditionConstraint);
+
+                        if (tooLow && mapping.isIncrease)   newState = 1;
+                        if (tooHigh && !mapping.isIncrease) newState = 1;
                     }
                 }
-            };
+
+                actuator.State = newState;
+                actions.Add(new ActuationAction {
+                    Name       = $"{actuatorUri.Split('/').Last()}_{newState}",
+                    Actuator   = actuator,
+                    NewStateValue = newState
+                });
+            }
 
             _logger.LogInformation("Generated decision.");
+            return new Simulation(cache.PropertyCache) { Actions = actions };
+        }
 
-            return simulation;
+        private static (bool tooLow, bool tooHigh) IsViolated(double value, ConstraintExpression constraint) =>
+            constraint switch {
+                NestedConstraintExpression { ConstraintType: ConstraintType.And } nested =>
+                    IsViolatedConjunction(value, nested),
+                AtomicConstraintExpression atomic =>
+                    IsViolatedAtomic(value, atomic),
+                _ => (false, false)
+            };
+
+        private static (bool tooLow, bool tooHigh) IsViolatedConjunction(double value, NestedConstraintExpression nested) {
+            if (nested.Left is AtomicConstraintExpression lower && nested.Right is AtomicConstraintExpression upper) {
+                var lowerBound = Convert.ToDouble(lower.Property.Value);
+                var upperBound = Convert.ToDouble(upper.Property.Value);
+                bool tooLow  = lower.ConstraintType == ConstraintType.GreaterThan ? value <= lowerBound : value < lowerBound;
+                bool tooHigh = upper.ConstraintType == ConstraintType.LessThanOrEqualTo ? value > upperBound : value >= upperBound;
+                return (tooLow, tooHigh);
+            }
+            return (false, false);
+        }
+
+        private static (bool tooLow, bool tooHigh) IsViolatedAtomic(double value, AtomicConstraintExpression atomic) {
+            var bound = Convert.ToDouble(atomic.Property.Value);
+            return atomic.ConstraintType switch {
+                ConstraintType.GreaterThan           => (value <= bound, false),
+                ConstraintType.GreaterThanOrEqualTo  => (value < bound,  false),
+                ConstraintType.LessThan              => (false, value >= bound),
+                ConstraintType.LessThanOrEqualTo     => (false, value > bound),
+                _ => (false, false)
+            };
         }
     }
 }

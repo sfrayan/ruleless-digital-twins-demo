@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="OfficeTwin"
+  guid="{cbc3f2fa-dd86-4ced-a7ab-eb1f86a76d70}"
+  description="Physical twin of a Nordic office room (temperature + humidity dynamics).&#10;   Designed for use with the ruleless-digital-twins MAPE-K loop.&#10;&#10;   Inputs  (set by SmartNode after initialization):&#10;     HeaterActuator        - electric panel heater  (0=off, 1=on)&#10;     FloorHeatingActuator  - hydronic floor heating (0=off, 1=on)&#10;     DehumidifierActuator  - dehumidifier           (0=off, 1=on)&#10;&#10;   Outputs (matched to PropertyCache via URI EndsWith):&#10;     Temperature  -&gt; ha:OfficeTemperature  [degC]&#10;     Humidity     -&gt; ha:OfficeHumidity     [% RH]&#10;&#10;   Room: 4 m x 5 m x 2.7 m = 54 m3, Nordic winter, T_out = -5 degC.&#10;  "
+  version=""
+  generationTool="OpenModelica Compiler OpenModelica v1.26.3 (64-bit)"
+  generationDateAndTime="2026-04-21T19:31:45Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="3">
+  <CoSimulation
+    modelIdentifier="OfficeTwin"
+    needsExecutionTool="false"
+    canHandleVariableCommunicationStepSize="true"
+    canInterpolateInputs="true"
+    maxOutputDerivativeOrder="1"
+    canRunAsynchronuously = "false"
+    canBeInstantiatedOnlyOncePerProcess="false"
+    canNotUseMemoryManagementFunctions="false"
+    canGetAndSetFMUstate="false"
+    canSerializeFMUstate="false"
+    providesDirectionalDerivative="false">
+    <SourceFiles>
+      <File name="OfficeTwin.c" />
+      <File name="OfficeTwin_functions.c" />
+      <File name="OfficeTwin_records.c" />
+      <File name="OfficeTwin_01exo.c" />
+      <File name="OfficeTwin_02nls.c" />
+      <File name="OfficeTwin_03lsy.c" />
+      <File name="OfficeTwin_04set.c" />
+      <File name="OfficeTwin_05evt.c" />
+      <File name="OfficeTwin_06inz.c" />
+      <File name="OfficeTwin_07dly.c" />
+      <File name="OfficeTwin_08bnd.c" />
+      <File name="OfficeTwin_09alg.c" />
+      <File name="OfficeTwin_10asr.c" />
+      <File name="OfficeTwin_11mix.c" />
+      <File name="OfficeTwin_12jac.c" />
+      <File name="OfficeTwin_13opt.c" />
+      <File name="OfficeTwin_14lnz.c" />
+      <File name="OfficeTwin_15syn.c" />
+      <File name="OfficeTwin_16dae.c" />
+      <File name="OfficeTwin_17inl.c" />
+      <File name="OfficeTwin_18spd.c" />
+      <File name="OfficeTwin_init_fmu.c" />
+      <File name="OfficeTwin_FMU.c" />
+      <File name="fmi-export/fmu2_model_interface.c" />
+      <File name="fmi-export/fmu_read_flags.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/arrayIndex.c" />
+      <File name="./simulation/jacobian_util.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+      <File name="./external_solvers/dgesv.c" />
+      <File name="./external_solvers/dgetrf.c" />
+      <File name="./external_solvers/dgetri.c" />
+      <File name="./external_solvers/dtrtri.c" />
+      <File name="./external_solvers/dtrti2.c" />
+      <File name="./external_solvers/dlamch.c" />
+      <File name="./external_solvers/ilaenv.c" />
+      <File name="./external_solvers/xerbla.c" />
+      <File name="./external_solvers/dgetf2.c" />
+      <File name="./external_solvers/dgetrs.c" />
+      <File name="./external_solvers/dlaswp.c" />
+      <File name="./external_solvers/ieeeck.c" />
+      <File name="./external_solvers/iparmq.c" />
+      <File name="./external_solvers/dgemm.c" />
+      <File name="./external_solvers/dger.c" />
+      <File name="./external_solvers/dgemv.c" />
+      <File name="./external_solvers/dscal.c" />
+      <File name="./external_solvers/dswap.c" />
+      <File name="./external_solvers/dtrsm.c" />
+      <File name="./external_solvers/dtrmm.c" />
+      <File name="./external_solvers/dtrmv.c" />
+      <File name="./external_solvers/idamax.c" />
+      <File name="./external_solvers/lsame.c" />
+      <File name="./external_solvers/i_nint.c" />
+      <File name="./external_solvers/pow_di.c" />
+      <File name="./external_solvers/s_cmp.c" />
+      <File name="./external_solvers/s_copy.c" />
+      <File name="./external_solvers/s_cat.c" />
+      <File name="./external_solvers/F77_aloc.c" />
+      <File name="./external_solvers/exit_.c" />
+      <File name="./external_solvers/enorm_.c" />
+      <File name="./external_solvers/hybrj_.c" />
+      <File name="./external_solvers/dpmpar_.c" />
+      <File name="./external_solvers/qrfac_.c" />
+      <File name="./external_solvers/qform_.c" />
+      <File name="./external_solvers/dogleg_.c" />
+      <File name="./external_solvers/r1updt_.c" />
+      <File name="./external_solvers/r1mpyq_.c" />
+      <File name="ModelicaExternalC/ModelicaStandardTables.c" />
+      <File name="ModelicaExternalC/ModelicaMatIO.c" />
+      <File name="ModelicaExternalC/ModelicaIO.c" />
+      <File name="ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c" />
+      <File name="ModelicaExternalC/snprintf.c" />
+    </SourceFiles>
+  </CoSimulation>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="3600.0" tolerance="1e-6" stepSize="7.2"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="_D_outputAlias_Temperature"
+    valueReference="0"
+    description="Predicted room temperature [degC]  — matches ha:OfficeTemperature"
+    initial="exact">
+    <Real start="16.7"/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="W"
+    valueReference="1"
+    description="Room absolute humidity [g/kg_air]  (= 8.1 % RH at 16.7 degC)"
+    initial="exact">
+    <Real start="0.962"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="der(_D_outputAlias_Temperature)"
+    valueReference="2"
+    description="der(Predicted room temperature [degC]  — matches ha:OfficeTemperature)"
+    >
+    <Real derivative="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="der(W)"
+    valueReference="3"
+    description="der(Room absolute humidity [g/kg_air]  (= 8.1 % RH at 16.7 degC))"
+    >
+    <Real derivative="2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="der(_D_outputAlias_Humidity)"
+    valueReference="4"
+    description="Predicted relative humidity [% RH] — matches ha:OfficeHumidity"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="der(Psat_in)"
+    valueReference="5"
+    description="Indoor saturation vapour pressure [Pa] — function of T"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="der(W_sat)"
+    valueReference="6"
+    description="Indoor saturation specific humidity [g/kg_air]"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="Humidity"
+    valueReference="11"
+    description="Predicted relative humidity [% RH] — matches ha:OfficeHumidity"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="Psat_in"
+    valueReference="12"
+    description="Indoor saturation vapour pressure [Pa] — function of T"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="Q_heat"
+    valueReference="13"
+    description="Total heating power actually delivered [W]"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="Q_loss"
+    valueReference="14"
+    description="Heat loss to outside through envelope and ventilation [W]"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="Temperature"
+    valueReference="15"
+    description="Predicted room temperature [degC]  — matches ha:OfficeTemperature"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="W_sat"
+    valueReference="16"
+    description="Indoor saturation specific humidity [g/kg_air]"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="P_flr"
+    valueReference="17"
+    description="Floor heating rated power [W]  (75 W/m2 x 20 m2)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1500.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="P_htr"
+    valueReference="18"
+    description="Electric heater rated power [W]"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="2000.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="Psat_out"
+    valueReference="19"
+    description="Outdoor saturation vapour pressure [Pa]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="Q_int"
+    valueReference="20"
+    description="Internal + solar gains [W] (1 person 70W + PC 150W + lighting 30W + solar 100W)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="350.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="RH_out"
+    valueReference="21"
+    description="Outdoor relative humidity [%]"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="80.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="T_out"
+    valueReference="22"
+    description="Outdoor temperature [degC], Nordic winter"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="-5.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="UA"
+    valueReference="23"
+    description="Total thermal conductance [W/K] (envelope + ventilation)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="50.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="V"
+    valueReference="24"
+    description="Room volume [m3] — 4 m x 5 m x 2.7 m"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="54.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="W_out"
+    valueReference="25"
+    description="Outdoor absolute humidity [g/kg_air]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="cp"
+    valueReference="26"
+    description="Specific heat of air [J/(kg.K)]"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1005.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="m_air"
+    valueReference="27"
+    description="Total air mass in room [kg]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="m_deh"
+    valueReference="28"
+    description="Dehumidifier moisture removal capacity [g/s] = 180 g/h"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.05"/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="m_per"
+    valueReference="29"
+    description="Moisture generation by 1 person [g/s] = 50 g/h, sedentary"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0139"/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="m_vent"
+    valueReference="30"
+    description="Ventilation mass flow rate [kg/s]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "28" -->
+  <ScalarVariable
+    name="n_ach"
+    valueReference="31"
+    description="Air changes per hour [1/h] — balanced ventilation + infiltration"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.5"/>
+  </ScalarVariable>
+  <!-- Index of variable = "29" -->
+  <ScalarVariable
+    name="rho"
+    valueReference="32"
+    description="Air density [kg/m3] at indoor conditions"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1.2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "30" -->
+  <ScalarVariable
+    name="T"
+    valueReference="0"
+    description="Room air temperature [degC]"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "31" -->
+  <ScalarVariable
+    name="DehumidifierActuator"
+    valueReference="0"
+    description="Dehumidifier state (0 = off, 1 = on)"
+    variability="discrete"
+    causality="input"
+    >
+    <Integer start="0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "32" -->
+  <ScalarVariable
+    name="FloorHeatingActuator"
+    valueReference="1"
+    description="Floor heating state (0 = off, 1 = on)"
+    variability="discrete"
+    causality="input"
+    >
+    <Integer start="0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "33" -->
+  <ScalarVariable
+    name="HeaterActuator"
+    valueReference="2"
+    description="Electric panel heater state (0 = off, 1 = on)"
+    variability="discrete"
+    causality="input"
+    >
+    <Integer start="0"/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="8" dependencies="1 2" dependenciesKind="dependent dependent" />
+      <Unknown index="12" dependencies="1" dependenciesKind="dependent" />
+    </Outputs>
+    <Derivatives>
+      <Unknown index="3" dependencies="1 32 33" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="4" dependencies="2 31" dependenciesKind="dependent dependent" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown index="3" dependencies="1 14 15 17 19 20 23 32 33" dependenciesKind="dependent dependent dependent dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="4" dependencies="2 25 26 31" dependenciesKind="dependent dependent dependent dependent" />
+      <Unknown index="8" dependencies="1 2" dependenciesKind="dependent dependent" />
+      <Unknown index="12" dependencies="1" dependenciesKind="dependent" />
+      <Unknown index="16" dependencies="19" dependenciesKind="dependent" />
+      <Unknown index="22" dependencies="18" dependenciesKind="dependent" />
+      <Unknown index="24" dependencies="21 29" dependenciesKind="dependent dependent" />
+      <Unknown index="27" dependencies="28" dependenciesKind="dependent" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>
