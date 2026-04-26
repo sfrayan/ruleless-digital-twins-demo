@@ -1,5 +1,644 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant Maison Connectée (RDT)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --bot-msg-bg: rgba(99, 102, 241, 0.2);
+            --user-msg-bg: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .chat-container {
+            width: 100%; max-width: 480px; height: 85vh; max-height: 760px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            text-align: center; background: rgba(0, 0, 0, 0.2);
+        }
+        .chat-header h1 {
+            font-size: 1.2rem; font-weight: 600;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .chat-header .subtitle { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+        .chat-header .subtitle .dot-status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; background: #64748b; vertical-align: middle; }
+        .chat-header .subtitle .dot-status.ok { background: #22c55e; }
+        .chat-header .subtitle .dot-status.ko { background: #ef4444; }
+        .dashboard {
+            padding: 12px 16px; border-bottom: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.15);
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 0.75rem;
+        }
+        .dash-card {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            border-radius: 8px; padding: 8px; text-align: center;
+        }
+        .dash-card .label { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .dash-card .value { font-weight: 600; font-size: 0.95rem; margin-top: 2px; }
+        .exec-btn {
+            margin-top: 10px; background: #22c55e; color: white; border: none;
+            padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer;
+            font-size: 0.85rem; transition: all 0.15s ease;
+        }
+        .exec-btn:hover { background: #16a34a; transform: translateY(-1px); }
+        .exec-btn:disabled { background: #475569; cursor: not-allowed; transform: none; }
+        .cancel-btn {
+            background: transparent; color: #fca5a5; border: 1px solid rgba(239,68,68,0.4);
+            padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer;
+        }
+        .cancel-btn:hover { background: rgba(239,68,68,0.15); }
+        .schedules-panel {
+            padding: 8px 16px; border-bottom: 1px solid var(--glass-border);
+            background: rgba(34,197,94,0.08); display: none; font-size: 0.78rem;
+        }
+        .schedules-panel.visible { display: block; }
+        .schedule-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);
+        }
+        .schedule-row:last-child { border-bottom: none; }
+        .schedule-row .st-running { color: #22c55e; }
+        .schedule-row .st-completed { color: var(--text-muted); }
+        .schedule-row .st-cancelled { color: #fca5a5; }
+        .schedule-row .st-failed { color: #ef4444; }
+        .quick-chips {
+            padding: 8px 16px 0; display: flex; flex-wrap: wrap; gap: 6px;
+            border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.15);
+        }
+        .chip {
+            background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35);
+            color: var(--text-main); border-radius: 14px; padding: 5px 10px;
+            font-size: 0.72rem; cursor: pointer; transition: all 0.15s ease;
+        }
+        .chip:hover { background: rgba(99,102,241,0.35); transform: translateY(-1px); }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+        .message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 0.95rem; line-height: 1.5; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .bot-message { align-self: flex-start; background: var(--bot-msg-bg); border: 1px solid rgba(99, 102, 241, 0.3); border-bottom-left-radius: 4px; }
+        .user-message { align-self: flex-end; background: var(--user-msg-bg); border: 1px solid var(--glass-border); border-bottom-right-radius: 4px; }
+        .chat-input-container { padding: 20px; border-top: 1px solid var(--glass-border); background: rgba(0, 0, 0, 0.2); display: flex; gap: 12px; }
+        .chat-input {
+            flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 12px 16px; color: var(--text-main);
+            font-family: inherit; font-size: 0.95rem; outline: none; transition: all 0.3s ease;
+        }
+        .chat-input:focus { border-color: var(--primary); background: rgba(255, 255, 255, 0.1); }
+        .send-btn {
+            background: var(--primary); color: white; border: none; border-radius: 12px;
+            width: 48px; height: 48px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .send-btn:hover { background: var(--primary-hover); transform: scale(1.05); }
+        .send-btn svg { width: 20px; height: 20px; fill: currentColor; }
+        .typing-indicator {
+            gap: 4px; padding: 12px 16px; background: var(--bot-msg-bg);
+            border-radius: 16px; border-bottom-left-radius: 4px;
+            align-self: flex-start; width: fit-content; display: none;
+        }
+        .dot { width: 8px; height: 8px; background: #818cf8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+    </style>
+</head>
+<body>
 
-<h1>roomM370</h1>
-<p> <i></i> </p> 
-<h4> <u> Information </u> </h4>
-<h4> <u> Revisions </u> </h4>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Assistant Maison Connectée</h1>
+            <div class="subtitle">
+                <span class="dot-status" id="status-dot"></span>
+                <span id="status-text">connexion…</span>
+            </div>
+        </div>
+
+        <div class="dashboard" id="dashboard">
+            <div class="dash-card"><div class="label">Température</div><div class="value" id="dash-temp">—</div></div>
+            <div class="dash-card"><div class="label">Puissance</div><div class="value" id="dash-power">—</div></div>
+            <div class="dash-card"><div class="label">Qualité air</div><div class="value" id="dash-air">—</div></div>
+        </div>
+
+        <div class="schedules-panel" id="schedules-panel"></div>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                Bonjour ! Je suis l'assistant RDT de votre maison. Demandez-moi d'<b>allumer/éteindre</b> une lumière, de <b>régler la température</b>, ou posez-moi une question sur l'<b>état</b> de la maison ou le <b>prix</b> de l'énergie.
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typing-indicator">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
+        <details class="discovered-entities" id="discovered-entities">
+            <summary>Entités découvertes</summary>
+            <div id="entities-list">Chargement...</div>
+        </details>
+
+        <div class="quick-chips" id="quick-chips">
+            <span class="chip" data-q="allume le salon">🛋️ Allume salon</span>
+            <span class="chip" data-q="éteins la cuisine">🍳 Éteins cuisine</span>
+            <span class="chip" data-q="mets la température à 22 degrés">🌡️ 22°C</span>
+            <span class="chip" data-q="quelle est la température ?">📊 État maison</span>
+            <span class="chip" data-q="quel est le prix ?">💰 Prix</span>
+            <span class="chip" data-q="charge la voiture à 100% pour 7h du matin">🚗 Charge Tesla nuit</span>
+        </div>
+
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Posez votre question..." autocomplete="off">
+            <button class="send-btn" id="send-btn" aria-label="Envoyer">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8080';
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        let energyPrices = [];
+        let haStates = {};
+
+        async function refreshPrices() {
+            try {
+                const r = await fetch(`${API}/api/price`);
+                if (r.ok) energyPrices = (await r.json()).prices;
+            } catch (_) {}
+        }
+
+        async function refreshHaStates() {
+            try {
+                const r = await fetch(`${API}/api/ha/states`);
+                if (!r.ok) throw new Error('status=' + r.status);
+                const arr = await r.json();
+                haStates = {};
+                for (const e of arr) haStates[e.entity_id] = e;
+                statusDot.className = 'dot-status ok';
+                statusText.textContent = 'SmartNode + HA connectés';
+                const temp = haStates['sensor.showcase_living_room_temperature'];
+                const pow  = haStates['sensor.showcase_estimated_power_draw'];
+                const air  = haStates['sensor.showcase_air_quality_index'];
+                document.getElementById('dash-temp').textContent  = temp ? `${parseFloat(temp.state).toFixed(1)} °C` : '—';
+                document.getElementById('dash-power').textContent = pow  ? `${parseFloat(pow.state).toFixed(0)} W`       : '—';
+                document.getElementById('dash-air').textContent   = air  ? `AQI ${parseFloat(air.state).toFixed(0)}`     : '—';
+            } catch (e) {
+                statusDot.className = 'dot-status ko';
+                statusText.textContent = 'SmartNode injoignable (lancez dotnet run)';
+            }
+        }
+
+        async function refreshEntitiesFull() {
+            try {
+                const r = await fetch(`${API}/api/entities_full`);
+                if (!r.ok) return;
+                const entities = await r.json();
+                const list = document.getElementById('entities-list');
+                
+                const byDomain = {};
+                for (const e of entities) {
+                    if (!byDomain[e.Domain]) byDomain[e.Domain] = [];
+                    byDomain[e.Domain].push(e);
+                }
+                
+                let html = '';
+                for (const domain in byDomain) {
+                    html += `<strong>${domain}</strong><ul>`;
+                    for (const e of byDomain[domain]) {
+                        html += `<li>${e.FriendlyName} <code>${e.EntityId}</code></li>`;
+                    }
+                    html += `</ul>`;
+                }
+                list.innerHTML = html;
+            } catch (e) {
+                document.getElementById('entities-list').textContent = "Erreur de chargement";
+            }
+        }
+
+        refreshPrices();
+        refreshHaStates();
+        refreshEntitiesFull();
+        setInterval(refreshHaStates, 5000);
+        setInterval(refreshEntitiesFull, 30000);
+
+        function addMessage(text, isUser = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', isUser ? 'user-message' : 'bot-message');
+            if (isUser) msgDiv.textContent = text;
+            else msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            chatMessages.appendChild(typingIndicator);
+            typingIndicator.style.display = 'flex';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        function hideTyping() { typingIndicator.style.display = 'none'; }
+
+        // Ollama (via SmartNode proxy) + keyword fallback. 10s client timeout so a slow
+        // first-load of the Ollama model doesn't leave the UI stuck waiting forever.
+        async function classifyIntent(text) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 120000); // 120s timeout
+            try {
+                const r = await fetch(`${API}/api/nlu`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text }),
+                    signal: ctrl.signal
+                });
+                clearTimeout(timer);
+                if (r.ok) {
+                    const obj = await r.json();
+                    if (obj && obj.intent) return { source: 'llm', ...obj };
+                }
+            } catch (e) {
+                console.warn('NLU unavailable, using keyword fallback:', e.message);
+            } finally {
+                clearTimeout(timer);
+            }
+            return { source: 'keyword', ...keywordFallback(text) };
+        }
+
+        function keywordFallback(text) {
+            const t = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            const num = (t.match(/(\d+)/) || [])[1];
+            const pickLight = () => /cuisine|kitchen/.test(t) ? 'KitchenLight'
+                                  : /couloir|hall/.test(t)    ? 'HallwayLight'
+                                  : /purif|air/.test(t)       ? 'AirPurifier'
+                                                              : 'LivingRoomLight';
+            if (/(allume|allumer|\bon\b)/.test(t))
+                return { intent: 'actuate', target: pickLight(), value: true,  answer: '' };
+            if (/(eteint|eteins|eteindre|coupe|\boff\b)/.test(t))
+                return { intent: 'actuate', target: pickLight(), value: false, answer: '' };
+            if (/(temperature|degre|chauff)/.test(t) && num)
+                return { intent: 'set_temperature', target: null, value: parseInt(num, 10), answer: '' };
+            if (/(prix).*(moins|bas|baisse|meilleur)/.test(t)) return { intent: 'price_cheapest',  target: null, value: null, answer: '' };
+            if (/(prix).*(plus|haut|pire)/.test(t))            return { intent: 'price_expensive', target: null, value: null, answer: '' };
+            if (/moyen/.test(t) && /prix|cout/.test(t))         return { intent: 'price_average',   target: null, value: null, answer: '' };
+            if (/prix|cout|tarif|combien/.test(t))              return { intent: 'price_current',   target: null, value: null, answer: '' };
+            if (/temp|humidit|puissance|etat|qualite/.test(t))  return { intent: 'query_state',     target: null, value: null, answer: '' };
+            if (/bonjour|salut|hey|coucou/.test(t))             return { intent: 'greeting',        target: null, value: null, answer: '' };
+            if (/quoi|sais|peux|fais/.test(t))                  return { intent: 'capabilities',    target: null, value: null, answer: '' };
+
+            // Optimize schedule: planified task with deadline + cost concern.
+            if (/(planifie|optimise|charge.*nuit|tesla|voiture|heures?.creuses?|moins.cher.*nuit|a\s+\d+h.*creuse)/.test(t)) {
+                const durMatch = t.match(/(\d+)\s*h(?:eures?)?\s*(?:de|pour)?/);
+                const duration = durMatch ? parseInt(durMatch[1], 10) : 4;
+                // Deadline: "pour 7h" / "à 8h du matin" / "avant 6h"
+                const dlMatch = t.match(/(?:pour|avant|a|à)\s+(\d{1,2})\s*h/);
+                const deadline = dlMatch ? parseInt(dlMatch[1], 10) : 24;
+                const bgMatch = t.match(/budget.*?(\d+)|max.*?(\d+)\s*(?:nok|couronne)/);
+                const budget = bgMatch ? parseInt(bgMatch[1] || bgMatch[2], 10) : null;
+                const isCar = /tesla|voiture|vehicule|auto/.test(t);
+                const isHeat = /chauff|radiateur|heater/.test(t);
+                const power = isCar ? 11 : (isHeat ? 2 : 1);
+                const target = isCar ? 'CarCharger' : (isHeat ? 'HeaterActuator' : null);
+                return { intent: 'optimize_schedule', target, value: null, duration_hours: duration, deadline_hour: deadline, budget_max: budget, power_kw: power, answer: '' };
+            }
+
+            return { intent: 'unknown', target: null, value: null, answer: '' };
+        }
+
+        async function handleIntent(nlu) {
+            const { intent, target, value, answer } = nlu;
+            switch (intent) {
+                case 'greeting':
+                    return addMessage(answer || "Bonjour ! Que puis-je faire pour vous ?");
+                case 'capabilities':
+                    return addMessage(answer || "Je peux allumer/éteindre vos lumières, le purificateur d'air, régler la température cible, et vous donner l'état des capteurs et le prix de l'énergie.");
+                case 'smalltalk':
+                    return addMessage(answer || "Tout tourne, la boucle MAPE-K cycle parfaitement.");
+                case 'out_of_scope':
+                    return addMessage(answer || "Désolé, je me limite à votre maison connectée et à l'énergie.");
+                case 'query_state': {
+                    if (nlu.entity_id && haStates[nlu.entity_id]) {
+                        const val = haStates[nlu.entity_id].state;
+                        const attr = haStates[nlu.entity_id].attributes;
+                        const unit = attr && attr.unit_of_measurement ? ` ${attr.unit_of_measurement}` : '';
+                        return addMessage((answer || `L'état est `) + `<b>${val}${unit}</b>.`);
+                    }
+                    // Fallback to generic dashboard values if no entity_id was provided
+                    const temp = haStates['sensor.showcase_living_room_temperature']?.state;
+                    const pow  = haStates['sensor.showcase_estimated_power_draw']?.state;
+                    const air  = haStates['sensor.showcase_air_quality_index']?.state;
+                    const lights = [
+                        ['light.showcase_living_room_lamp', 'salon'],
+                        ['light.showcase_kitchen_light',    'cuisine'],
+                        ['light.showcase_hallway_light',    'couloir']
+                    ].map(([id, n]) => `${n}: <b>${haStates[id]?.state ?? '?'}</b>`).join(', ');
+                    return addMessage(
+                        (answer ? answer + "<br>" : "") + 
+                        `État actuel :<br>` +
+                        `• Température salon : <b>${temp ?? '?'} °C</b><br>` +
+                        `• Puissance estimée : <b>${pow ?? '?'} W</b><br>` +
+                        `• Qualité air (AQI) : <b>${air ?? '?'}</b><br>` +
+                        `• Lumières : ${lights}`
+                    );
+                }
+                case 'set_temperature':
+                case 'set_target_temp': {  // backward-compat with older NLU responses
+                    if (value == null) return addMessage("À quelle température ? (ex: 'mets 21 degrés')");
+                    try {
+                        // Direct order: push the value to HA input_number immediately (slider bouge).
+                        const r = await fetch(`${API}/api/actuate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                uri: 'http://www.semanticweb.org/rayan/ontologies/2025/ha/LivingRoomTemperatureInput',
+                                state: value
+                            })
+                        });
+                        if (r.ok) {
+                            addMessage((answer || `OK — température salon réglée à <b>${value}°C</b>`) + ` <span style="color:var(--text-muted)">(ordre direct via ruleless → HA)</span>`);
+                            refreshHaStates();
+                        } else {
+                            addMessage(`Erreur côté SmartNode : ${await r.text()}`);
+                        }
+                    } catch (e) { addMessage("SmartNode injoignable."); }
+                    return;
+                }
+                case 'actuate': {
+                    if (!target) return addMessage("Quelle entité dois-je piloter ? (salon, cuisine, couloir, purificateur)");
+                    const uri = `http://www.semanticweb.org/rayan/ontologies/2025/ha/${target}`;
+                    const state = value ? 1 : 0;
+                    try {
+                        const r = await fetch(`${API}/api/actuate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ uri, state })
+                        });
+                        if (r.ok) {
+                            addMessage((answer || `OK — ${target} → ${value ? 'ON' : 'OFF'}`) + ` <span style="color:var(--text-muted)">(via ruleless → HA)</span>`);
+                            refreshHaStates();
+                        } else {
+                            addMessage(`Erreur côté SmartNode : ${await r.text()}`);
+                        }
+                    } catch (e) { addMessage("SmartNode injoignable."); }
+                    return;
+                }
+                case 'call_service': {
+                    if (!nlu.domain || !nlu.service) return addMessage("Je ne sais pas exactement quelle action exécuter.");
+                    try {
+                        const payloadData = nlu.data || {};
+                        if (nlu.entity_id && !payloadData.entity_id) {
+                            payloadData.entity_id = nlu.entity_id;
+                        }
+                        const r = await fetch(`${API}/api/call_service`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                domain: nlu.domain, 
+                                service: nlu.service, 
+                                data: payloadData
+                            })
+                        });
+                        if (r.ok) {
+                            addMessage((answer || `OK — exécution de ${nlu.domain}.${nlu.service}`) + ` <span style="color:var(--text-muted)">(via dynamique → HA)</span>`);
+                            setTimeout(refreshHaStates, 1000); // refresh after a short delay
+                        } else {
+                            addMessage(`Erreur d'exécution du service : ${await r.text()}`);
+                        }
+                    } catch (e) { addMessage("SmartNode injoignable."); }
+                    return;
+                }
+                case 'price_current': {
+                    if (!energyPrices.length) await refreshPrices();
+                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
+                    return addMessage(`Prix actuel : <b>${energyPrices[0].toFixed(2)} NOK/kWh</b>.`);
+                }
+                case 'price_cheapest': {
+                    if (!energyPrices.length) await refreshPrices();
+                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
+                    const m = Math.min(...energyPrices), i = energyPrices.indexOf(m);
+                    return addMessage(`Moins cher dans <b>${i}h</b> → <b>${m.toFixed(2)} NOK/kWh</b>.`);
+                }
+                case 'price_expensive': {
+                    if (!energyPrices.length) await refreshPrices();
+                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
+                    const m = Math.max(...energyPrices), i = energyPrices.indexOf(m);
+                    return addMessage(`Plus cher dans <b>${i}h</b> → <b>${m.toFixed(2)} NOK/kWh</b>.`);
+                }
+                case 'price_average': {
+                    if (!energyPrices.length) await refreshPrices();
+                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
+                    const avg = energyPrices.reduce((a, b) => a + b, 0) / energyPrices.length;
+                    return addMessage(`Prix moyen 24h : <b>${avg.toFixed(2)} NOK/kWh</b>.`);
+                }
+                case 'optimize_schedule': {
+                    const payload = {
+                        duration_hours: nlu.duration_hours ?? 4,
+                        deadline_hour: nlu.deadline_hour ?? 24,
+                        budget_max:    nlu.budget_max ?? null,
+                        power_kw:      nlu.power_kw ?? 1,
+                        target:        nlu.target ?? null
+                    };
+                    try {
+                        const r = await fetch(`${API}/api/optimize`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (r.ok) addMessage(renderSchedule(await r.json(), answer));
+                        else      addMessage(`Erreur d'optimisation : ${await r.text()}`);
+                    } catch (e) { addMessage("SmartNode injoignable."); }
+                    return;
+                }
+
+                default:
+                    return addMessage(answer || "Je n'ai pas bien compris. Essayez : <i>allume le salon</i>, <i>mets 21 degrés</i>, <i>quel est le prix ?</i>, <i>charge la voiture à 100% pour 7h</i>");
+            }
+        }
+
+        // Map plan id -> plan for the Execute button.
+        const _pendingPlans = new Map();
+
+        // Render a 24h schedule visualization: coloured hour cells + cost/savings summary.
+        function renderSchedule(plan, answer) {
+            const cells = plan.schedule.map(s => {
+                const color = s.on ? '#22c55e'                                // green: chosen (ON)
+                            : !s.before_deadline ? '#334155'                  // dark: after deadline
+                            : (s.price > plan.avg_price ? 'rgba(239,68,68,0.45)' : 'rgba(148,163,184,0.25)');
+                return `<div title="h${s.hour}: ${s.price.toFixed(2)} NOK/kWh${s.on ? ' ✓' : ''}" `
+                     + `style="flex:1;height:28px;background:${color};border-right:1px solid rgba(0,0,0,0.3);"></div>`;
+            }).join('');
+
+            const targetLabel = plan.target ? ` pour <b>${plan.target}</b>` : '';
+            const header = answer || `Plan optimisé${targetLabel} (${plan.duration_hours}h avant ${plan.deadline_hour}h) :`;
+            const budgetLine = plan.budget_max != null
+                ? `<br>Budget ${plan.budget_max} NOK : ${plan.within_budget ? '<b style="color:#22c55e">✓ respecté</b>' : '<b style="color:#ef4444">✗ dépassé</b>'}`
+                : '';
+
+            // Only show Execute button if we have a concrete actuator to drive.
+            const planId = 'plan-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+            _pendingPlans.set(planId, plan);
+            const execBtn = plan.target
+                ? `<br><button class="exec-btn" data-exec-plan="${planId}">▶ Exécuter le plan (mode démo : 1h = 1min)</button>`
+                : `<br><span style="color:var(--text-muted);font-size:0.75rem">(Précise une cible — ex. "charge la voiture..." — pour pouvoir exécuter)</span>`;
+
+            return `${header}
+                <div style="display:flex;margin:8px 0 4px;border-radius:6px;overflow:hidden;">${cells}</div>
+                <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);">
+                    <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span>
+                </div>
+                <div style="margin-top:8px;font-size:0.85rem;line-height:1.5;">
+                    Heures choisies : <b>${plan.chosen_hours.map(h => h + 'h').join(', ')}</b><br>
+                    Durée ${plan.duration_hours}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} NOK</b>
+                    <span style="color:var(--text-muted)">(moy. ${plan.avg_price_chosen}, baseline ${plan.avg_price})</span><br>
+                    <b style="color:#22c55e">Économie : ${plan.savings_percent}%</b> vs charge constante${budgetLine}
+                    ${execBtn}
+                </div>`;
+        }
+
+        async function executePlan(planId, demoMode = true) {
+            const plan = _pendingPlans.get(planId);
+            if (!plan || !plan.target) return;
+            const hoursOn = plan.schedule.map(s => s.on);
+            const targetUri = `http://www.semanticweb.org/rayan/ontologies/2025/ha/${plan.target}`;
+            try {
+                const r = await fetch(`${API}/api/execute_schedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target: targetUri,
+                        target_name: plan.target,
+                        hours_on: hoursOn,
+                        time_unit_seconds: demoMode ? 60 : 3600
+                    })
+                });
+                if (r.ok) {
+                    const res = await r.json();
+                    addMessage(`▶ Planning lancé (id <b>${res.schedule_id}</b>, ${demoMode ? 'mode démo : 1h = 1min' : 'temps réel'}). Suivi dans le bandeau en haut.`);
+                    refreshSchedules();
+                } else {
+                    addMessage(`Erreur exécution : ${await r.text()}`);
+                }
+            } catch (e) { addMessage("SmartNode injoignable."); }
+        }
+
+        async function refreshSchedules() {
+            try {
+                const r = await fetch(`${API}/api/schedules`);
+                if (!r.ok) return;
+                const { schedules } = await r.json();
+                const panel = document.getElementById('schedules-panel');
+                if (!schedules.length) { panel.classList.remove('visible'); panel.innerHTML = ''; return; }
+                panel.classList.add('visible');
+                panel.innerHTML = '<b style="font-size:0.72rem;color:var(--text-muted);letter-spacing:0.05em;">⏱ PLANNINGS</b>'
+                    + schedules.slice(0, 4).map(s => {
+                        const elapsed = Math.floor((Date.now() - new Date(s.started_at).getTime()) / 1000);
+                        const totalSec = 24 * s.time_unit_seconds;
+                        const progress = Math.min(100, Math.floor(elapsed / totalSec * 100));
+                        const cancelBtn = s.status === 'running'
+                            ? ` <button class="cancel-btn" data-cancel-id="${s.id}">✕</button>`
+                            : '';
+                        return `<div class="schedule-row">
+                            <span><b>${s.target}</b> <span class="st-${s.status}">${s.status}</span>
+                                ${s.status === 'running' ? ` — h=${s.current_hour}/24 (${progress}%)` : ''}
+                            </span>
+                            <span><code style="font-size:0.7rem;color:var(--text-muted)">${s.id}</code>${cancelBtn}</span>
+                        </div>`;
+                    }).join('');
+            } catch (_) {}
+        }
+        setInterval(refreshSchedules, 3000);
+        refreshSchedules();
+
+        async function processMessage(text) {
+            try {
+                const nlu = await classifyIntent(text);
+                hideTyping();
+                await handleIntent(nlu);
+            } catch (e) {
+                hideTyping();
+                console.error(e);
+                addMessage(`Erreur interne: ${e.message}`);
+            }
+        }
+
+        function handleSend() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            addMessage(text, true);
+            chatInput.value = '';
+            showTyping();
+            processMessage(text);
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+
+        // Quick-action chips: click fills input + submits.
+        document.getElementById('quick-chips').addEventListener('click', (e) => {
+            const chip = e.target.closest('.chip');
+            if (!chip) return;
+            chatInput.value = chip.dataset.q;
+            handleSend();
+        });
+
+        // Global delegation: Execute-plan button and Cancel-schedule button.
+        document.addEventListener('click', async (e) => {
+            const execTarget = e.target.closest('[data-exec-plan]');
+            if (execTarget) {
+                execTarget.disabled = true;
+                execTarget.textContent = 'Lancement…';
+                await executePlan(execTarget.dataset.execPlan, true);
+                execTarget.textContent = '✓ Lancé';
+                return;
+            }
+            const cancelTarget = e.target.closest('[data-cancel-id]');
+            if (cancelTarget) {
+                const id = cancelTarget.dataset.cancelId;
+                try {
+                    await fetch(`${API}/api/cancel_schedule`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id })
+                    });
+                    refreshSchedules();
+                } catch (_) {}
+            }
+        });
+    </script>
+</body>
+</html>

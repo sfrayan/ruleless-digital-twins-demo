@@ -40,5 +40,9 @@ namespace TestProject.Mocks.ServiceMocks
         public void AddValueHandlerImplementation(string owlType, IValueHandler valueHandler) {
             _valueHandlerImplementations.Add(owlType, valueHandler);
         }
+
+        public IEnumerable<(string SensorName, string ProcedureName)> ListSensorKeys() => [];
+
+        public IEnumerable<string> ListActuatorKeys() => [];
     }
 }

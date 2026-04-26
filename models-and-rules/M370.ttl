@@ -179,8 +179,7 @@
                         owl:NamedIndividual;
                       <http://www.w3.org/ns/ssn/forProperty> :RoomHumidity.
 :RoomM370 rdt:generateCombinationsOnlyFromOptimalConditions false;
-          rdt:hasSimulationModel :RoomM370FMU,
-                                 :FakepoolFMU;
+          rdt:hasSimulationModel :RoomM370FMU;
           rdt:minimizes :AccumulatedEnergyTimesPrice;
           a <http://www.w3.org/ns/sosa/Platform>,
             owl:NamedIndividual;

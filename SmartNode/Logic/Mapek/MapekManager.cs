@@ -64,64 +64,71 @@ namespace Logic.Mapek {
             var stopwatch = new Stopwatch();
 
             while (_isLoopActive) {
-                // Gather duration information for the dummy environment.
-                stopwatch.Start();
+                try {
+                    // Gather duration information for the dummy environment.
+                    stopwatch.Start();
 
-                if (_coordinatorSettings.MaximumMapekRounds > -1) {
-                    _logger.LogInformation("MAPE-K rounds left: {maxRound})", _coordinatorSettings.MaximumMapekRounds);
-                }
+                    if (_coordinatorSettings.MaximumMapekRounds > -1) {
+                        _logger.LogInformation("MAPE-K rounds left: {maxRound})", _coordinatorSettings.MaximumMapekRounds);
+                    }
 
-                // Reload the instance model for each cycle to ensure dynamic model updates are captured.
-                _mapekKnowledge.LoadModelsFromKnowledgeBase(); // This makes sense in theory but won't work without the Factory updating as well.
+                    // Reload the instance model for each cycle to ensure dynamic model updates are captured.
+                    _mapekKnowledge.LoadModelsFromKnowledgeBase(); // This makes sense in theory but won't work without the Factory updating as well.
 
-                // Monitor - Observe all hard and soft Sensor values, construct soft Sensor trees, and collect OptimalConditions.
-                var cache = await _mapekMonitor.Monitor(currentMapekCycle);
+                    // Monitor - Observe all hard and soft Sensor values, construct soft Sensor trees, and collect OptimalConditions.
+                    var cache = await _mapekMonitor.Monitor(currentMapekCycle);
 
-                // Use the right planning method (and functionality) based on configuration.
-                // TODO: Consider using the strategy pattern here. How do we make the Manager agnostic to the type of planner it should use? We should probably not have multi-cycle
-                // simulation logic be outside the planner. This would allow us to simply return the simulation as required. The planner should probably decide on its own whether it
-                // has something buffered based on the conditions observed.
-                if (_coordinatorSettings.UseRulelessMethod) {
-                    // Check for previously constructed simulation paths to pick the next simulation configuration to execute. If case-based functionality is enabled, check for preexisting
-                    // cases and save new ones when applicable. For simplicity, the look-ahead approach and the case-based functionality effectively keep state based on the configuration at
-                    // the time of making a sequence of simulations/cases to execute. This means if settings values are changed midway through a full simulation path execution (e.g., 2/4),
-                    // the system will continue executing as if it followed the old ones for the remainder of the simulation path. Dynamic settings changes thus take effect after the execution
-                    // of a full simulation path or in case it is deliberately rejected early by the system due to deviation from its previously predicted Property values.
-                    (simulationToExecute, potentialCase, currentSimulationTree, currentOptimalSimulationPath) = await ManageSimulationsAndCasesAndPotentiallyPlan(cache,
-                        simulationToExecute,
-                        potentialCase,
-                        currentSimulationTree,
-                        currentOptimalSimulationPath,
-                        currentMapekCycle);
-                } else {
-                    // Keeping it simple with a classic bang-bang controller.
-                    simulationToExecute = _bangBangPlanner.Plan(cache);
-                }
+                    // Use the right planning method (and functionality) based on configuration.
+                    // TODO: Consider using the strategy pattern here. How do we make the Manager agnostic to the type of planner it should use? We should probably not have multi-cycle
+                    // simulation logic be outside the planner. This would allow us to simply return the simulation as required. The planner should probably decide on its own whether it
+                    // has something buffered based on the conditions observed.
+                    if (_coordinatorSettings.UseRulelessMethod) {
+                        // Check for previously constructed simulation paths to pick the next simulation configuration to execute. If case-based functionality is enabled, check for preexisting
+                        // cases and save new ones when applicable. For simplicity, the look-ahead approach and the case-based functionality effectively keep state based on the configuration at
+                        // the time of making a sequence of simulations/cases to execute. This means if settings values are changed midway through a full simulation path execution (e.g., 2/4),
+                        // the system will continue executing as if it followed the old ones for the remainder of the simulation path. Dynamic settings changes thus take effect after the execution
+                        // of a full simulation path or in case it is deliberately rejected early by the system due to deviation from its previously predicted Property values.
+                        (simulationToExecute, potentialCase, currentSimulationTree, currentOptimalSimulationPath) = await ManageSimulationsAndCasesAndPotentiallyPlan(cache,
+                            simulationToExecute,
+                            potentialCase,
+                            currentSimulationTree,
+                            currentOptimalSimulationPath,
+                            currentMapekCycle);
+                    } else {
+                        // Keeping it simple with a classic bang-bang controller.
+                        simulationToExecute = _bangBangPlanner.Plan(cache);
+                    }
 
-                stopwatch.Stop();
+                    stopwatch.Stop();
 
-                // Execute - Execute the Actuators with the appropriate ActuatorStates and/or adjust the values of ReconfigurableParameters.
-                await _mapekExecute.Execute(simulationToExecute, stopwatch.ElapsedMilliseconds / 1000.0);
-                
-                stopwatch.Reset();
+                    // Execute - Execute the Actuators with the appropriate ActuatorStates and/or adjust the values of ReconfigurableParameters.
+                    await _mapekExecute.Execute(simulationToExecute, stopwatch.ElapsedMilliseconds / 1000.0);
 
-                // If configured, write MAPE-K state to CSV.
-                if (_coordinatorSettings.SaveMapekCycleData && simulationToExecute is not null && currentSimulationTree is not null) {
-                    CsvUtils.WritePropertyStatesToCsv(_filepathArguments.DataDirectory, currentMapekCycle, cache.PropertyCache.ConfigurableParameters, cache.PropertyCache.Properties);
-                    CsvUtils.WriteActuatorStatesToCsv(_filepathArguments.DataDirectory, currentMapekCycle, simulationToExecute);
-                    CsvUtils.WritePropertyState(Path.Combine(_filepathArguments.DataDirectory, "bufferedDecisionsUsed.csv"), currentMapekCycle, "Buffered_Decision_Used", _bufferedDecisionUsed);
-                    CsvUtils.WritePropertyState(Path.Combine(_filepathArguments.DataDirectory, "caseHits.csv"), currentMapekCycle, "Matching_Case_Found", _caseHit);
+                    stopwatch.Reset();
 
-                    var serializedSimulationTree = JsonConvert.SerializeObject(currentSimulationTree.SerializableSimulationTreeNode);
-                    File.WriteAllText(Path.Combine(_filepathArguments.DataDirectory, SimulationTreeFilename), serializedSimulationTree);
-                }
+                    // If configured, write MAPE-K state to CSV.
+                    if (_coordinatorSettings.SaveMapekCycleData && simulationToExecute is not null && currentSimulationTree is not null) {
+                        CsvUtils.WritePropertyStatesToCsv(_filepathArguments.DataDirectory, currentMapekCycle, cache.PropertyCache.ConfigurableParameters, cache.PropertyCache.Properties);
+                        CsvUtils.WriteActuatorStatesToCsv(_filepathArguments.DataDirectory, currentMapekCycle, simulationToExecute);
+                        CsvUtils.WritePropertyState(Path.Combine(_filepathArguments.DataDirectory, "bufferedDecisionsUsed.csv"), currentMapekCycle, "Buffered_Decision_Used", _bufferedDecisionUsed);
+                        CsvUtils.WritePropertyState(Path.Combine(_filepathArguments.DataDirectory, "caseHits.csv"), currentMapekCycle, "Matching_Case_Found", _caseHit);
 
-                if (_coordinatorSettings.MaximumMapekRounds > 0) {
-                    _coordinatorSettings.MaximumMapekRounds--;
-                }
-                if (_coordinatorSettings.MaximumMapekRounds == 0) {
-                    _isLoopActive = false;
-                    break; // We can sleep when we're dead.
+                        var serializedSimulationTree = JsonConvert.SerializeObject(currentSimulationTree.SerializableSimulationTreeNode);
+                        File.WriteAllText(Path.Combine(_filepathArguments.DataDirectory, SimulationTreeFilename), serializedSimulationTree);
+                    }
+
+                    if (_coordinatorSettings.MaximumMapekRounds > 0) {
+                        _coordinatorSettings.MaximumMapekRounds--;
+                    }
+                    if (_coordinatorSettings.MaximumMapekRounds == 0) {
+                        _isLoopActive = false;
+                        break; // We can sleep when we're dead.
+                    }
+                } catch (Exception cycleEx) {
+                    // A failed cycle (e.g. HA temporarily unreachable, sensor read error, actuator throw) must not
+                    // kill the MAPE-K loop. Log and retry on the next cycle so the system auto-recovers when HA returns.
+                    _logger.LogError(cycleEx, "MAPE-K cycle {cycle} failed — skipping and retrying next cycle", currentMapekCycle);
+                    stopwatch.Reset();
                 }
 
                 currentMapekCycle++;

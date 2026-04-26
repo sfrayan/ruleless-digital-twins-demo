@@ -12,5 +12,10 @@ namespace Logic.FactoryInterface
         public IConfigurableParameter GetConfigurableParameterImplementation(string configurableParameterName);
 
         public IValueHandler GetValueHandlerImplementation(string owlType);
+
+        // Introspection used by the chatbox API (/api/entities, /api/state).
+        public IEnumerable<(string SensorName, string ProcedureName)> ListSensorKeys();
+
+        public IEnumerable<string> ListActuatorKeys();
     }
 }

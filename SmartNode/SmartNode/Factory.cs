@@ -1,4 +1,4 @@
-﻿using Logic.TTComponentInterfaces;
+using Logic.TTComponentInterfaces;
 using Logic.FactoryInterface;
 using Logic.ValueHandlerInterfaces;
 using Implementations.ValueHandlers;
@@ -217,7 +217,7 @@ namespace SmartNode
                              "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor1Procedure"),
                             new HomeAssistantSensor(
                                 "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor1",
-                                "input_number.office_temperature_sensor1",
+                                "sensor.showcase_living_room_temperature",
                                 null, _haHttpClient)
                         },
                         {
@@ -225,7 +225,7 @@ namespace SmartNode
                              "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor2Procedure"),
                             new HomeAssistantSensor(
                                 "http://www.semanticweb.org/rayan/ontologies/2025/ha/TempSensor2",
-                                "input_number.office_temperature_sensor2",
+                                "sensor.showcase_living_room_temperature",
                                 null, _haHttpClient)
                         },
                         {
@@ -233,7 +233,49 @@ namespace SmartNode
                              "http://www.semanticweb.org/rayan/ontologies/2025/ha/HumiditySensorProcedure"),
                             new HomeAssistantSensor(
                                 "http://www.semanticweb.org/rayan/ontologies/2025/ha/HumiditySensor",
-                                "input_number.office_humidity_raw",
+                                "sensor.showcase_air_quality_index",
+                                null, _haHttpClient)
+                        },
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor",
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure"),
+                            new FakepoolSensor("http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor",
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure")
+                        },
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceDummySensor",
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceDummyProcedure"),
+                            new ConstantSensor("http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceDummySensor",
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceDummyProcedure", 1.58)
+                        },
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/EnergyConsumptionMeter",
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/EnergyConsumptionMeterProcedure"),
+                            new DummyEnergyConsumptionSensor("http://www.semanticweb.org/rayan/ontologies/2025/ha/EnergyConsumptionMeterProcedure",
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/EnergyConsumptionMeter")
+                        },
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/MapekCycleSensor",
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/MapekCycleProcedure"),
+                            new GeneralConstantSensor("http://www.semanticweb.org/rayan/ontologies/2025/ha/MapekCycleSensor",
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/MapekCycleProcedure",
+                                0)
+                        },
+                        // Extra HA sensors for chatbox visualisation only (not part of the MAPE-K instance model).
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/PowerDrawSensor",
+                             "http://www.semanticweb.org/rayan/ontologies/2025/ha/PowerDrawProcedure"),
+                            new HomeAssistantSensor(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/PowerDrawSensor",
+                                "sensor.showcase_estimated_power_draw",
+                                null, _haHttpClient)
+                        },
+                        {
+                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/AirQualitySensor",
+                             "http://www.semanticweb.org/rayan/ontologies/2025/ha/AirQualityProcedure"),
+                            new HomeAssistantSensor(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/AirQualitySensor",
+                                "sensor.showcase_air_quality_index",
                                 null, _haHttpClient)
                         }
                     },
@@ -242,24 +284,83 @@ namespace SmartNode
                             "http://www.semanticweb.org/rayan/ontologies/2025/ha/HeaterActuator",
                             new HomeAssistantActuator(
                                 "http://www.semanticweb.org/rayan/ontologies/2025/ha/HeaterActuator",
-                                "input_select.office_heater_state",
-                                HomeAssistantActuator.ActuatorKind.InputSelect,
-                                _haHttpClient, "heat")
-                        },
-                        {
-                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/FloorHeatingActuator",
-                            new HomeAssistantActuator(
-                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/FloorHeatingActuator",
-                                "input_boolean.office_floor_heating_state",
+                                "input_boolean.showcase_living_room_light",
                                 HomeAssistantActuator.ActuatorKind.InputBoolean,
                                 _haHttpClient)
                         },
                         {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/FloorHeatingActuator",
+                            new DummyFloorHeating("http://www.semanticweb.org/rayan/ontologies/2025/ha/FloorHeatingActuator")
+                        },
+                        {
                             "http://www.semanticweb.org/rayan/ontologies/2025/ha/DehumidifierActuator",
+                            new DummyDehumidifier("http://www.semanticweb.org/rayan/ontologies/2025/ha/DehumidifierActuator")
+                        },
+                        // Real HA actuators wired for the chatbox (lights + air purifier switch).
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/LivingRoomLight",
                             new HomeAssistantActuator(
-                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/DehumidifierActuator",
-                                "input_boolean.office_dehumidifier_state",
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/LivingRoomLight",
+                                "light.showcase_living_room_lamp",
+                                HomeAssistantActuator.ActuatorKind.Light,
+                                _haHttpClient)
+                        },
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/KitchenLight",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/KitchenLight",
+                                "light.showcase_kitchen_light",
+                                HomeAssistantActuator.ActuatorKind.Light,
+                                _haHttpClient)
+                        },
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/HallwayLight",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/HallwayLight",
+                                "light.showcase_hallway_light",
+                                HomeAssistantActuator.ActuatorKind.Light,
+                                _haHttpClient)
+                        },
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/AirPurifier",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/AirPurifier",
+                                "switch.showcase_air_purifier",
+                                HomeAssistantActuator.ActuatorKind.Switch,
+                                _haHttpClient)
+                        },
+                        {
+                            // Car charger target for the optimize_schedule planner demo.
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/CarCharger",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/CarCharger",
+                                "input_boolean.showcase_car_charger",
                                 HomeAssistantActuator.ActuatorKind.InputBoolean,
+                                _haHttpClient)
+                        },
+                        // Numeric HA inputs — direct-order actuators (chatbox "mets 21 degrés" → immediate push).
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/LivingRoomTemperatureInput",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/LivingRoomTemperatureInput",
+                                "input_number.showcase_temperature",
+                                HomeAssistantActuator.ActuatorKind.InputNumber,
+                                _haHttpClient)
+                        },
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/PowerDrawInput",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/PowerDrawInput",
+                                "input_number.showcase_power_draw",
+                                HomeAssistantActuator.ActuatorKind.InputNumber,
+                                _haHttpClient)
+                        },
+                        {
+                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/AirQualityInput",
+                            new HomeAssistantActuator(
+                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/AirQualityInput",
+                                "input_number.showcase_air_quality_index",
+                                HomeAssistantActuator.ActuatorKind.InputNumber,
                                 _haHttpClient)
                         }
                     }
@@ -358,6 +459,20 @@ namespace SmartNode
             }
 
             throw new Exception($"No implementation was found for Sensor value handler for OWL type {owlType}.");
+        }
+
+        public IEnumerable<(string SensorName, string ProcedureName)> ListSensorKeys() {
+            if (_sensorActuatorMaps.TryGetValue(_environment, out SensorActuatorMapWrapper? wrapper)) {
+                return wrapper.SensorMap.Keys;
+            }
+            return [];
+        }
+
+        public IEnumerable<string> ListActuatorKeys() {
+            if (_sensorActuatorMaps.TryGetValue(_environment, out SensorActuatorMapWrapper? wrapper)) {
+                return wrapper.ActuatorMap.Keys;
+            }
+            return [];
         }
 
         public class SensorActuatorMapWrapper {

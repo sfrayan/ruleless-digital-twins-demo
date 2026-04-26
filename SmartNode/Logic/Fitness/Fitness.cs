@@ -136,12 +136,12 @@ namespace Fitness {
         {
             var l = L.MkInitialValues(s);
             var r = R.MkInitialValues(s);
-            return new object[] { (double)0 }; // XXX type!
+            return l.Concat(r).Concat(new object[] { (double)0 }); // XXX type!
         }
 
         internal override IEnumerable<Property> MkProps()
         {
-            return new[] { Prop };
+            return L.MkProps().Concat(R.MkProps()).Concat(new Property[] { Prop });
         }
 
         internal override void Eval(AccState in_state, Simulation sim, AccState out_state)
@@ -195,11 +195,18 @@ namespace Fitness {
         }
 
         internal override IEnumerable<object> MkInitialValues(Simulation s) {
-            return new[] { IsOp ? (s.PropertyCache.Properties.ContainsKey(Prop.Name) ? s.PropertyCache.Properties[Prop.Name].Value : 0.0) : s.PropertyCache.Properties[Orig.Name].Value };
+            var myInit = IsOp ? (s.PropertyCache.Properties.ContainsKey(Prop.Name) ? s.PropertyCache.Properties[Prop.Name].Value : 0.0) : s.PropertyCache.Properties[Orig.Name].Value;
+            if (IsOp) {
+                return Op!.MkInitialValues(s).Concat(new object[] { myInit });
+            }
+            return new[] { myInit };
         }
 
         internal override IEnumerable<Property> MkProps()
         {
+            if (IsOp) {
+                return Op!.MkProps().Concat(new Property[] { Prop });
+            }
             return new[] { Prop };
         }
 
@@ -220,5 +227,37 @@ namespace Fitness {
         bool IsOp { get; }
 
         private readonly FOp? Op = null;
+    }
+
+    public class FTargetPenalty : FOp
+    {
+        public static double? TargetValue = null;
+
+        public FTargetPenalty(Property prop, String? name = null)
+        {
+            this.Orig = prop;
+            this.Prop = new Property() { OwlType = prop.OwlType, Name = name ?? GetHashCode().ToString() + "_Penalty", Value = null };
+        }
+
+        internal override IEnumerable<object> MkInitialValues(Simulation s) {
+            return new object[] { 0.0 };
+        }
+
+        internal override IEnumerable<Property> MkProps() {
+            return new[] { Prop };
+        }
+
+        internal override void Eval(AccState in_state, Simulation sim, AccState out_state) {
+            double penalty = 0;
+            if (TargetValue.HasValue) {
+                var rawVal = sim.PropertyCache.Properties[Orig.Name].Value;
+                double currentVal = rawVal is double d ? d : Double.Parse(rawVal.ToString());
+                // Massive penalty: 1000 cost units per degree off target per tick
+                penalty = Math.Abs(currentVal - TargetValue.Value) * 1000.0;
+            }
+            out_state.Set(Prop, penalty);
+        }
+
+        Property Orig { get; }
     }
 }

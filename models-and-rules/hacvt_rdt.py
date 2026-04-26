@@ -409,6 +409,25 @@ if __name__ == "__main__":
         help="Enable privacy filter.",
     )
 
+    # --- Task 2: Environment Variable Support ---
+    import os
+    import sys
+    
+    ha_url = os.environ.get("HA_URL")
+    ha_token_val = os.environ.get("HA_TOKEN")
+    rdt_ns = os.environ.get("RDT_NAMESPACE")
+    
+    # If no URL is provided in the args, inject URL and token from env
+    has_url = any(arg.startswith("http") for arg in sys.argv[1:])
+    if not has_url and ha_url and ha_token_val:
+        # Append positional arguments at the end
+        sys.argv.append(ha_url)
+        sys.argv.append("HA_TOKEN")
+            
+    # Inject namespace if provided via env and not already in args
+    if rdt_ns and "--namespace" not in sys.argv and "-n" not in sys.argv:
+        sys.argv.extend(["--namespace", rdt_ns])
+
     cli  = CLISource(parser)
     tool = HACVT_RDT(cli)
     g    = tool.main(

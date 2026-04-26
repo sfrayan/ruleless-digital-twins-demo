@@ -38,6 +38,10 @@ namespace TestProject
             }
             throw new Exception($"No implementation was found for Sensor value handler for OWL type {owlType}.");
         }
+
+        public IEnumerable<(string SensorName, string ProcedureName)> ListSensorKeys() => [];
+
+        public IEnumerable<string> ListActuatorKeys() => [];
     }
 
     class MyMapekPlan : MapekPlan {
