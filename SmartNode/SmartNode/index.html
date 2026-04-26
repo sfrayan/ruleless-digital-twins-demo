@@ -203,7 +203,10 @@
         async function refreshPrices() {
             try {
                 const r = await fetch(`${API}/api/price`);
-                if (r.ok) energyPrices = (await r.json()).prices;
+                if (r.ok) {
+                    const j = await r.json();
+                    energyPrices = Array.isArray(j.prices) ? j.prices : [];
+                }
             } catch (_) {}
         }
 
@@ -505,8 +508,21 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        if (r.ok) addMessage(renderSchedule(await r.json(), answer));
-                        else      addMessage(`Optimization error: ${await r.text()}`);
+                        if (r.ok) {
+                            const plan = await r.json();
+                            if (plan.forecastAvailable === false || plan.optimized === false) {
+                                const reason = plan.reason || 'Future Nord Pool price forecast unavailable.';
+                                addMessage(
+                                    `<b>Cannot optimize cheapest hours.</b><br>` +
+                                    `${reason}<br>` +
+                                    `<span style="color:var(--text-muted);font-size:0.8rem">Source: ${plan.priceSource || 'homeassistant:nordpool.get_prices_for_date'}</span>`
+                                );
+                            } else {
+                                addMessage(renderSchedule(plan, answer));
+                            }
+                        } else {
+                            addMessage(`Optimization error: ${await r.text()}`);
+                        }
                     } catch (e) { addMessage("SmartNode unreachable."); }
                     return;
                 }
@@ -522,20 +538,33 @@
         // Render a 24h schedule visualization: coloured hour cells + cost/savings summary.
         function renderSchedule(plan, answer) {
             const cells = plan.schedule.map(s => {
-                const color = s.on ? '#22c55e'                                // green: chosen (ON)
+                const noData = (s.price == null);
+                const color = noData ? 'rgba(100,116,139,0.15)'              // no forecast for this hour
+                            : s.on ? '#22c55e'                                // green: chosen (ON)
                             : !s.before_deadline ? '#334155'                  // dark: after deadline
                             : (s.price > plan.avg_price ? 'rgba(239,68,68,0.45)' : 'rgba(148,163,184,0.25)');
-                return `<div title="h${s.hour}: ${s.price.toFixed(2)} NOK/kWh${s.on ? ' ✓' : ''}" `
+                const tip = noData
+                    ? `h${s.hour}: no future price`
+                    : `h${s.hour}: ${s.price.toFixed(2)} ${plan.currency || 'NOK'}/kWh${s.on ? ' ✓' : ''}`;
+                return `<div title="${tip}" `
                      + `style="flex:1;height:28px;background:${color};border-right:1px solid rgba(0,0,0,0.3);"></div>`;
             }).join('');
 
             const targetLabel = plan.target ? ` for <b>${plan.target}</b>` : '';
-            const windowLabel = (plan.start_hour != null && plan.start_hour > 0)
-                ? `${plan.duration_hours}h between ${plan.start_hour}:00 and ${plan.deadline_hour}:00`
-                : `${plan.duration_hours}h before ${plan.deadline_hour}:00`;
-            const header = answer || `Optimized plan${targetLabel} (${windowLabel}):`;
+            const currency = plan.currency || 'NOK';
+            const usingForecast = plan.priceSource ? ` using Nord Pool future prices` : '';
+            const requestedH = plan.requested_duration_hours ?? plan.duration_hours;
+            const actualH = plan.actual_duration_hours ?? plan.duration_hours;
+            const slotCount = plan.slot_count ?? (plan.chosen_slots ? plan.chosen_slots.length : 0);
+            const durationLabel = (Math.abs(actualH - requestedH) > 0.01)
+                ? `${actualH}h (${slotCount} slots, requested ${requestedH}h)`
+                : `${actualH}h (${slotCount} slots)`;
+            const windowLabel = (plan.chosen_slots && plan.chosen_slots.length)
+                ? `${durationLabel} between ${new Date(plan.chosen_slots[0].start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} and ${new Date(plan.chosen_slots[plan.chosen_slots.length-1].end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                : `${durationLabel} before ${plan.deadline_hour}:00`;
+            const header = answer || `Optimized plan${targetLabel}${usingForecast} (${windowLabel}):`;
             const budgetLine = plan.budget_max != null
-                ? `<br>Budget ${plan.budget_max} NOK: ${plan.within_budget ? '<b style="color:#22c55e">✓ respected</b>' : '<b style="color:#ef4444">✗ exceeded</b>'}`
+                ? `<br>Budget ${plan.budget_max} ${currency}: ${plan.within_budget ? '<b style="color:#22c55e">✓ respected</b>' : '<b style="color:#ef4444">✗ exceeded</b>'}`
                 : '';
 
             const planId = 'plan-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -544,15 +573,26 @@
                 ? `<br><button class="exec-btn" data-exec-plan="${planId}">▶ Run plan (demo mode: 1h = 1min)</button>`
                 : `<br><span style="color:var(--text-muted);font-size:0.75rem">(Specify a target — e.g. "charge the Tesla..." — to enable execution)</span>`;
 
+            const slotLines = (plan.chosen_slots && plan.chosen_slots.length)
+                ? '<br>' + plan.chosen_slots.map(s => {
+                    const start = new Date(s.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const end   = new Date(s.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return `&nbsp;&nbsp;• ${start}–${end} — ${s.price.toFixed(2)} ${currency}/kWh`;
+                  }).join('<br>')
+                : '';
+
+            const baselineNote = (plan.baseline_cost_nok != null)
+                ? ` (baseline ${plan.baseline_cost_nok} ${currency})`
+                : '';
+
             return `${header}
                 <div style="display:flex;margin:8px 0 4px;border-radius:6px;overflow:hidden;">${cells}</div>
                 <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);">
                     <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span>
                 </div>
                 <div style="margin-top:8px;font-size:0.85rem;line-height:1.5;">
-                    Chosen hours: <b>${plan.chosen_hours.map(h => h + 'h').join(', ')}</b><br>
-                    Duration ${plan.duration_hours}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} NOK</b>
-                    <span style="color:var(--text-muted)">(avg ${plan.avg_price_chosen}, baseline ${plan.avg_price})</span><br>
+                    Chosen hours: <b>${plan.chosen_hours.map(h => h + 'h').join(', ')}</b>${slotLines}<br>
+                    ${actualH}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} ${currency}</b>${baselineNote}<br>
                     <b style="color:#22c55e">Savings: ${plan.savings_percent}%</b> vs constant charge${budgetLine}
                     ${execBtn}
                 </div>`;

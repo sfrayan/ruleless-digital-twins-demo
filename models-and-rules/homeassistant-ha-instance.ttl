@@ -134,7 +134,7 @@ ha:PriceDummySensor a owl:NamedIndividual,
                       sosa:Sensor;
                     sosa:observes ha:price;
                     ssn:implements ha:PriceDummyProcedure.
-ha:PriceOutput meta:hasValue "1.03587"^^xsd:double;
+ha:PriceOutput meta:hasValue "1.11537"^^xsd:double;
                a owl:NamedIndividual,
                  ssn:Output,
                  ssn:Property.
@@ -176,6 +176,6 @@ ha:TemperatureUpperLimit meta:hasValue "22.0"^^xsd:double;
                            owl:NamedIndividual.
 ha:office-instance a owl:Ontology;
                    owl:imports meta:.
-ha:price meta:hasValue "1.307935"^^xsd:double;
+ha:price meta:hasValue "1.347685"^^xsd:double;
          a owl:NamedIndividual,
            sosa:ObservableProperty.

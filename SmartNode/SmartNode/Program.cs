@@ -157,10 +157,11 @@ namespace SmartNode
                                 if (env == "homeassistant") {
                                     try {
                                         var token = Environment.GetEnvironmentVariable("TOKEN_HA") ?? string.Empty;
-                                        using var http = new HttpClient { BaseAddress = new Uri("http://localhost:8123/"), Timeout = TimeSpan.FromSeconds(5) };
+                                        var area = NordPoolForecastProvider.GetArea().ToLowerInvariant();
+                                        using var http = new HttpClient { BaseAddress = new Uri(NordPoolForecastProvider.GetHaUrl()), Timeout = TimeSpan.FromSeconds(5) };
                                         http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-                                        const string prefix = "sensor.nord_pool_no5_";
+                                        string prefix = $"sensor.nord_pool_{area}_";
                                         string[] names = new[] {
                                             "current_price", "next_price", "previous_price",
                                             "lowest_price", "highest_price", "daily_average",
@@ -196,7 +197,43 @@ namespace SmartNode
                                             var current = GetState("current_price");
                                             var op1 = GetOffPeakTimes("off_peak_1_average");
                                             var op2 = GetOffPeakTimes("off_peak_2_average");
-                                            var fakePrices = Enumerable.Repeat(current, 24).ToArray();
+
+                                            // Real future forecast via nordpool.get_prices_for_date (auto-discovered config_entry).
+                                            var forecast = await NordPoolForecastProvider.GetForecastAsync(token, logger);
+                                            object forecastBlock;
+                                            double[] prices;
+                                            string? warning = null;
+
+                                            if (forecast.ForecastAvailable) {
+                                                prices = forecast.Slots.Select(s => Math.Round(s.Price, 4)).ToArray();
+                                                forecastBlock = new {
+                                                    forecastAvailable = true,
+                                                    forecastSource = forecast.Source,
+                                                    configEntryDiscovered = forecast.ConfigEntryDiscovered,
+                                                    area = forecast.Area,
+                                                    currency = forecast.Currency,
+                                                    timezone = forecast.Timezone,
+                                                    slots = forecast.Slots.Select(s => new {
+                                                        start = s.Start.ToString("o"),
+                                                        end = s.End.ToString("o"),
+                                                        hourLocal = s.HourLocal,
+                                                        price = Math.Round(s.Price, 4)
+                                                    }).ToArray()
+                                                };
+                                            } else {
+                                                prices = new[] { current };
+                                                warning = forecast.Warning ?? "Nord Pool future price forecast unavailable";
+                                                forecastBlock = new {
+                                                    forecastAvailable = false,
+                                                    forecastSource = forecast.Source,
+                                                    configEntryDiscovered = forecast.ConfigEntryDiscovered,
+                                                    area = forecast.Area,
+                                                    currency = forecast.Currency,
+                                                    timezone = forecast.Timezone,
+                                                    warning,
+                                                    slots = Array.Empty<object>()
+                                                };
+                                            }
 
                                             haJson = System.Text.Json.JsonSerializer.Serialize(new {
                                                 current,
@@ -211,7 +248,10 @@ namespace SmartNode
                                                 offPeak1 = new { from = op1.from, until = op1.until },
                                                 offPeak2 = new { from = op2.from, until = op2.until },
                                                 unit = GetUnit("current_price"),
-                                                prices = fakePrices
+                                                forecast = forecastBlock,
+                                                forecastAvailable = forecast.ForecastAvailable,
+                                                warning,
+                                                prices
                                             });
                                         } else {
                                             logger.LogWarning("/api/price: Nord Pool fetch returned non-success ({codes}); falling back to factory sensor",
@@ -527,21 +567,24 @@ Rules:
                                 context.Response.OutputStream.Write(bytes, 0, bytes.Length);
                             }
                         } else if (context.Request.Url!.AbsolutePath == "/api/optimize" && context.Request.HttpMethod == "POST") {
-                            // Plan: pick the N cheapest hours before deadline for a device of given power.
-                            // Returns a 24h schedule + cost + savings vs constant-price baseline.
+                            // This is the first production path toward MAPE-K future-cost optimization:
+                            // price forecast comes from Nord Pool (auto-discovered config_entry, real
+                            // hourly prices from nordpool.get_prices_for_date), EV consumption forecast
+                            // is simulated from candidate schedules. Later, general consumption should
+                            // come from the digital twin/FMUs for each simulation path.
                             try {
                                 using var reader = new StreamReader(context.Request.InputStream);
                                 var body = await reader.ReadToEndAsync();
                                 using var doc = System.Text.Json.JsonDocument.Parse(body);
 
-                                int duration = doc.RootElement.TryGetProperty("duration_hours", out var durEl) && durEl.ValueKind == System.Text.Json.JsonValueKind.Number
-                                    ? durEl.GetInt32() : 4;
+                                // Nord Pool slots can be sub-hourly (typically 15 min). duration_hours is a
+                                // *duration* in hours requested by the user, not a slot count.
+                                double requestedDurationHours = doc.RootElement.TryGetProperty("duration_hours", out var durEl) && durEl.ValueKind == System.Text.Json.JsonValueKind.Number
+                                    ? durEl.GetDouble() : 4.0;
                                 int deadlineHour = doc.RootElement.TryGetProperty("deadline_hour", out var dhEl) && dhEl.ValueKind == System.Text.Json.JsonValueKind.Number
                                     ? dhEl.GetInt32() : 24;
-                                // Optional: explicit lower bound on candidate hours, for windows like "between 2am and 7am".
-                                // Defaults to 0 to preserve the original behaviour for callers that don't send it.
-                                int startHour = doc.RootElement.TryGetProperty("start_hour", out var shEl) && shEl.ValueKind == System.Text.Json.JsonValueKind.Number
-                                    ? shEl.GetInt32() : 0;
+                                int? startHour = doc.RootElement.TryGetProperty("start_hour", out var shEl) && shEl.ValueKind == System.Text.Json.JsonValueKind.Number
+                                    ? shEl.GetInt32() : (int?)null;
                                 double? budget = doc.RootElement.TryGetProperty("budget_max", out var bmEl) && bmEl.ValueKind == System.Text.Json.JsonValueKind.Number
                                     ? bmEl.GetDouble() : (double?)null;
                                 double powerKw = doc.RootElement.TryGetProperty("power_kw", out var pkEl) && pkEl.ValueKind == System.Text.Json.JsonValueKind.Number
@@ -549,60 +592,170 @@ Rules:
                                 string? target = doc.RootElement.TryGetProperty("target", out var tgEl) && tgEl.ValueKind == System.Text.Json.JsonValueKind.String
                                     ? tgEl.GetString() : null;
 
-                                // Fetch 24h price forecast (same wiring as /api/price).
-                                var factory = host.Services.GetRequiredService<IFactory>();
-                                var env = coordinatorSettings!.Environment;
-                                string priceSensorUri, priceProcUri;
-                                if (env == "homeassistant") {
-                                    priceSensorUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor";
-                                    priceProcUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure";
-                                } else {
-                                    priceSensorUri = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#PriceSensor";
-                                    priceProcUri = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#PriceProcedure";
+                                var token = Environment.GetEnvironmentVariable("TOKEN_HA") ?? string.Empty;
+                                var forecast = await NordPoolForecastProvider.GetForecastAsync(token, logger);
+
+                                if (!forecast.ForecastAvailable) {
+                                    var noFc = System.Text.Json.JsonSerializer.Serialize(new {
+                                        optimized = false,
+                                        forecastAvailable = false,
+                                        reason = forecast.Warning ?? "Future Nord Pool price forecast unavailable",
+                                        priceSource = forecast.Source,
+                                        configEntryDiscovered = forecast.ConfigEntryDiscovered,
+                                        area = forecast.Area,
+                                        currency = forecast.Currency
+                                    });
+                                    var noFcBytes = System.Text.Encoding.UTF8.GetBytes(noFc);
+                                    context.Response.ContentType = "application/json";
+                                    context.Response.OutputStream.Write(noFcBytes, 0, noFcBytes.Length);
+                                    logger.LogWarning("[CHATBOX] Optimize aborted: forecast unavailable ({reason})", forecast.Warning);
+                                    return;
                                 }
-                                var sensor = factory.GetSensorImplementation(priceSensorUri, priceProcUri);
-                                var prices = new double[24];
-                                for (int i = 0; i < 24; i++) prices[i] = Convert.ToDouble(await sensor.ObservePropertyValue(i));
 
-                                int effectiveDeadline = Math.Clamp(deadlineHour, 1, 24);
-                                int effectiveStart    = Math.Clamp(startHour, 0, Math.Max(0, effectiveDeadline - 1));
-                                int windowSize        = Math.Max(1, effectiveDeadline - effectiveStart);
-                                int needed            = Math.Clamp(duration, 1, windowSize);
+                                // Build candidate window aligned to wall-clock local time, using the same
+                                // timezone the forecast was projected into.
+                                TimeZoneInfo tz;
+                                try { tz = TimeZoneInfo.FindSystemTimeZoneById(forecast.Timezone); }
+                                catch { try { tz = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time"); } catch { tz = TimeZoneInfo.Utc; } }
+                                var nowLocal = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz);
 
-                                var chosen = Enumerable.Range(effectiveStart, windowSize)
-                                    .OrderBy(h => prices[h])
-                                    .Take(needed)
-                                    .OrderBy(h => h)
+                                // Resolve deadline as the next wall-clock occurrence of `deadline_hour` in the future.
+                                int dl = Math.Clamp(deadlineHour, 1, 48);
+                                var deadlineCandidate = new DateTimeOffset(nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0, nowLocal.Offset).AddHours(dl);
+                                if (deadlineCandidate <= nowLocal) deadlineCandidate = deadlineCandidate.AddDays(1);
+
+                                DateTimeOffset windowStart = nowLocal;
+                                if (startHour is int sh) {
+                                    int sHour = Math.Clamp(sh, 0, 23);
+                                    var startCandidate = new DateTimeOffset(nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0, nowLocal.Offset).AddHours(sHour);
+                                    if (startCandidate <= nowLocal) startCandidate = startCandidate.AddDays(1);
+                                    if (startCandidate >= deadlineCandidate) startCandidate = startCandidate.AddDays(-1);
+                                    windowStart = startCandidate > nowLocal ? startCandidate : nowLocal;
+                                }
+
+                                // Aggregate sub-hourly Nord Pool slots (typically 15 min) into full-hour buckets.
+                                // /api/optimize works in whole hours so it stays compatible with /api/execute_schedule
+                                // (24 hourly cells) and the demo time mode (1h = 1min). /api/price still exposes the
+                                // raw 15-min slots for callers that want full resolution.
+                                static double SlotHours(NordPoolForecastProvider.Slot s) => Math.Max(0, (s.End - s.Start).TotalHours);
+
+                                var allBuckets = forecast.Slots
+                                    .GroupBy(s => new DateTimeOffset(s.Start.Year, s.Start.Month, s.Start.Day, s.Start.Hour, 0, 0, s.Start.Offset))
+                                    .Select(g => {
+                                        var bucketStart = g.Key;
+                                        var bucketEnd = bucketStart.AddHours(1);
+                                        var slots = g.OrderBy(s => s.Start).ToList();
+                                        double covered = slots.Sum(SlotHours);
+                                        double avgPrice = covered > 0
+                                            ? slots.Sum(s => s.Price * SlotHours(s)) / covered
+                                            : slots.Average(s => s.Price);
+                                        return new {
+                                            Start = bucketStart,
+                                            End = bucketEnd,
+                                            AvgPrice = avgPrice,
+                                            Complete = covered >= 0.999  // tolerate float jitter; 4×0.25 = 1.0
+                                        };
+                                    })
                                     .ToList();
 
-                                double costPerKwhSum = chosen.Sum(h => prices[h]);
-                                double totalCost = costPerKwhSum * powerKw;
-                                double avgBaseline = prices.Average();
-                                double baselineCost = avgBaseline * needed * powerKw;
-                                double savingsPct = baselineCost > 0 ? (1 - totalCost / baselineCost) * 100 : 0;
-                                double avgChosen = chosen.Count > 0 ? chosen.Average(h => prices[h]) : 0;
+                                // Keep only complete future hours fully contained in [windowStart, deadlineCandidate].
+                                var hourBuckets = allBuckets
+                                    .Where(b => b.Complete && b.Start >= windowStart && b.End <= deadlineCandidate)
+                                    .OrderBy(b => b.Start)
+                                    .ToList();
 
-                                var schedule = new System.Collections.Generic.List<object>(24);
-                                for (int h = 0; h < 24; h++) {
-                                    schedule.Add(new {
-                                        hour = h,
-                                        price = Math.Round(prices[h], 2),
-                                        on = chosen.Contains(h),
-                                        before_deadline = h < effectiveDeadline,
-                                        in_window = h >= effectiveStart && h < effectiveDeadline
+                                if (hourBuckets.Count == 0) {
+                                    var emptyJson = System.Text.Json.JsonSerializer.Serialize(new {
+                                        optimized = false,
+                                        forecastAvailable = true,
+                                        reason = "No complete future hours within the requested window",
+                                        priceSource = forecast.Source,
+                                        windowStart = windowStart.ToString("o"),
+                                        deadline = deadlineCandidate.ToString("o")
                                     });
+                                    var eb = System.Text.Encoding.UTF8.GetBytes(emptyJson);
+                                    context.Response.ContentType = "application/json";
+                                    context.Response.OutputStream.Write(eb, 0, eb.Length);
+                                    return;
                                 }
 
+                                // Each bucket is 1h, so #buckets = #hours. duration_hours is rounded to the nearest
+                                // whole hour and capped by what the window allows.
+                                int needed = Math.Max(1, (int)Math.Round(requestedDurationHours, MidpointRounding.AwayFromZero));
+                                needed = Math.Min(needed, hourBuckets.Count);
+
+                                var chosenBuckets = hourBuckets
+                                    .OrderBy(b => b.AvgPrice)
+                                    .ThenBy(b => b.Start)
+                                    .Take(needed)
+                                    .OrderBy(b => b.Start)
+                                    .ToList();
+
+                                double actualDurationHours = needed; // 1h per bucket
+                                double totalCost   = chosenBuckets.Sum(b => b.AvgPrice * powerKw); // ×1h
+                                double avgWindow   = hourBuckets.Average(b => b.AvgPrice);
+                                // Baseline: same energy as requested, charged at the window-average hourly price.
+                                double baselineCost = avgWindow * powerKw * requestedDurationHours;
+                                double savingsPct  = baselineCost > 0 ? (1 - totalCost / baselineCost) * 100 : 0;
+                                double avgChosen   = chosenBuckets.Average(b => b.AvgPrice);
+
+                                var chosenStarts = new HashSet<DateTimeOffset>(chosenBuckets.Select(b => b.Start));
+
+                                // 24-cell schedule keyed on local hour-of-day. on=true iff the bucket for that
+                                // hour was chosen — guarantees schedule[].on matches chosen_slots exactly so the
+                                // Run-plan executor never runs more hours than were optimized.
+                                var schedule = new System.Collections.Generic.List<object>(24);
+                                var bucketsByHour = hourBuckets
+                                    .GroupBy(b => b.Start.Hour)
+                                    .ToDictionary(g => g.Key, g => g.OrderBy(b => b.Start).First());
+                                for (int h = 0; h < 24; h++) {
+                                    if (bucketsByHour.TryGetValue(h, out var b)) {
+                                        schedule.Add(new {
+                                            hour = h,
+                                            price = Math.Round(b.AvgPrice, 4),
+                                            on = chosenStarts.Contains(b.Start),
+                                            before_deadline = b.End <= deadlineCandidate,
+                                            in_window = b.Start >= windowStart && b.End <= deadlineCandidate
+                                        });
+                                    } else {
+                                        schedule.Add(new {
+                                            hour = h, price = (double?)null, on = false,
+                                            before_deadline = false, in_window = false
+                                        });
+                                    }
+                                }
+
+                                var chosenSlotsOut = chosenBuckets.Select(b => new {
+                                    start = b.Start.ToString("o"),
+                                    end = b.End.ToString("o"),
+                                    hour = b.Start.Hour,
+                                    duration_hours = 1.0,
+                                    price = Math.Round(b.AvgPrice, 4),
+                                    cost = Math.Round(b.AvgPrice * powerKw, 4)
+                                }).ToList();
+
                                 var result = new {
+                                    optimized = true,
+                                    forecastAvailable = true,
+                                    priceSource = forecast.Source,
+                                    configEntryDiscovered = forecast.ConfigEntryDiscovered,
+                                    area = forecast.Area,
+                                    currency = forecast.Currency,
+                                    timezone = forecast.Timezone,
                                     target,
-                                    chosen_hours = chosen,
-                                    duration_hours = needed,
-                                    start_hour = effectiveStart,
-                                    deadline_hour = effectiveDeadline,
+                                    chosen_slots = chosenSlotsOut,
+                                    chosen_hours = chosenBuckets.Select(b => b.Start.Hour).OrderBy(h => h).ToList(),
+                                    requested_duration_hours = Math.Round(requestedDurationHours, 4),
+                                    duration_hours = (int)Math.Round(actualDurationHours),
+                                    actual_duration_hours = Math.Round(actualDurationHours, 4),
+                                    slot_count = chosenBuckets.Count,
+                                    start_hour = windowStart.Hour,
+                                    deadline_hour = deadlineCandidate.Hour == 0 ? 24 : deadlineCandidate.Hour,
                                     power_kw = powerKw,
                                     total_cost_nok = Math.Round(totalCost, 2),
-                                    avg_price = Math.Round(avgBaseline, 2),
-                                    avg_price_chosen = Math.Round(avgChosen, 2),
+                                    baseline_cost_nok = Math.Round(baselineCost, 2),
+                                    avg_price = Math.Round(avgWindow, 4),
+                                    avg_price_chosen = Math.Round(avgChosen, 4),
                                     savings_percent = (int)Math.Round(savingsPct),
                                     budget_max = budget,
                                     within_budget = budget == null || totalCost <= budget.Value,
@@ -613,7 +766,7 @@ Rules:
                                 var bytes = System.Text.Encoding.UTF8.GetBytes(json);
                                 context.Response.ContentType = "application/json";
                                 context.Response.OutputStream.Write(bytes, 0, bytes.Length);
-                                logger.LogInformation($"[CHATBOX] Optimize: target={target}, {needed}h in [{effectiveStart}h..{effectiveDeadline}h), chosen=[{string.Join(",", chosen)}], cost={totalCost:F2} NOK ({savingsPct:F0}% saved)");
+                                logger.LogInformation($"[CHATBOX] Optimize: target={target}, requested={requestedDurationHours:F2}h actual={actualDurationHours:F2}h ({chosenBuckets.Count} hourly buckets) in [{windowStart:HH:mm}..{deadlineCandidate:HH:mm}), cost={totalCost:F2} {forecast.Currency} ({savingsPct:F0}% saved)");
                             } catch (Exception ex) {
                                 context.Response.StatusCode = 500;
                                 var bytes = System.Text.Encoding.UTF8.GetBytes(ex.Message);
