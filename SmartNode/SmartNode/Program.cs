@@ -148,26 +148,102 @@ namespace SmartNode
 
                         if (context.Request.Url!.AbsolutePath == "/api/price") {
                             try {
-                                var factory = host.Services.GetRequiredService<IFactory>();
-                                // Price sensor URI differs per environment (roomM370 vs homeassistant).
                                 var env = coordinatorSettings!.Environment;
-                                string priceSensorUri, priceProcUri;
-                                if (env == "homeassistant") {
-                                    priceSensorUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor";
-                                    priceProcUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure";
-                                } else {
-                                    priceSensorUri = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#PriceSensor";
-                                    priceProcUri = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#PriceProcedure";
-                                }
-                                var sensor = factory.GetSensorImplementation(priceSensorUri, priceProcUri);
+                                string? haJson = null;
 
-                                var prices = new System.Collections.Generic.List<double>();
-                                for(int i=0; i<24; i++) {
-                                    var p = await sensor.ObservePropertyValue(i);
-                                    prices.Add(Convert.ToDouble(p));
+                                // env=homeassistant: try the live Nord Pool aggregate sensors first.
+                                // On any failure (HA down, integration absent, parse error), fall through
+                                // to the legacy factory-sensor path so the chatbox always gets a payload.
+                                if (env == "homeassistant") {
+                                    try {
+                                        var token = Environment.GetEnvironmentVariable("TOKEN_HA") ?? string.Empty;
+                                        using var http = new HttpClient { BaseAddress = new Uri("http://localhost:8123/"), Timeout = TimeSpan.FromSeconds(5) };
+                                        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                                        const string prefix = "sensor.nord_pool_no5_";
+                                        string[] names = new[] {
+                                            "current_price", "next_price", "previous_price",
+                                            "lowest_price", "highest_price", "daily_average",
+                                            "peak_average", "off_peak_1_average", "off_peak_2_average"
+                                        };
+                                        var responses = await Task.WhenAll(names.Select(n => http.GetAsync($"api/states/{prefix}{n}")));
+                                        if (responses.All(r => r.IsSuccessStatusCode)) {
+                                            var bodies = await Task.WhenAll(responses.Select(r => r.Content.ReadAsStringAsync()));
+                                            var byName = new Dictionary<string, string>();
+                                            for (int i = 0; i < names.Length; i++) byName[names[i]] = bodies[i];
+
+                                            double GetState(string n) {
+                                                using var d = System.Text.Json.JsonDocument.Parse(byName[n]);
+                                                var s = d.RootElement.GetProperty("state").GetString() ?? "0";
+                                                return double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
+                                            }
+                                            string GetUnit(string n) {
+                                                using var d = System.Text.Json.JsonDocument.Parse(byName[n]);
+                                                if (d.RootElement.TryGetProperty("attributes", out var a) &&
+                                                    a.TryGetProperty("unit_of_measurement", out var u)) return u.GetString() ?? "";
+                                                return "";
+                                            }
+                                            (string from, string until) GetOffPeakTimes(string n) {
+                                                using var d = System.Text.Json.JsonDocument.Parse(byName[n]);
+                                                if (d.RootElement.TryGetProperty("attributes", out var a)) {
+                                                    var f = a.TryGetProperty("time_from", out var tf) ? (tf.GetString() ?? "") : "";
+                                                    var u = a.TryGetProperty("time_until", out var tu) ? (tu.GetString() ?? "") : "";
+                                                    return (f, u);
+                                                }
+                                                return ("", "");
+                                            }
+
+                                            var current = GetState("current_price");
+                                            var op1 = GetOffPeakTimes("off_peak_1_average");
+                                            var op2 = GetOffPeakTimes("off_peak_2_average");
+                                            var fakePrices = Enumerable.Repeat(current, 24).ToArray();
+
+                                            haJson = System.Text.Json.JsonSerializer.Serialize(new {
+                                                current,
+                                                next = GetState("next_price"),
+                                                previous = GetState("previous_price"),
+                                                lowest = GetState("lowest_price"),
+                                                highest = GetState("highest_price"),
+                                                dailyAverage = GetState("daily_average"),
+                                                peakAverage = GetState("peak_average"),
+                                                offPeak1Average = GetState("off_peak_1_average"),
+                                                offPeak2Average = GetState("off_peak_2_average"),
+                                                offPeak1 = new { from = op1.from, until = op1.until },
+                                                offPeak2 = new { from = op2.from, until = op2.until },
+                                                unit = GetUnit("current_price"),
+                                                prices = fakePrices
+                                            });
+                                        } else {
+                                            logger.LogWarning("/api/price: Nord Pool fetch returned non-success ({codes}); falling back to factory sensor",
+                                                string.Join(",", responses.Select(r => (int)r.StatusCode)));
+                                        }
+                                    } catch (Exception npEx) {
+                                        logger.LogWarning("/api/price: Nord Pool fetch failed ({msg}); falling back to factory sensor", npEx.Message);
+                                    }
                                 }
-                                var json = System.Text.Json.JsonSerializer.Serialize(new { prices });
-                                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+                                // Legacy/fallback path: read the factory-registered price sensor 24 times.
+                                if (haJson == null) {
+                                    var factory = host.Services.GetRequiredService<IFactory>();
+                                    string priceSensorUri, priceProcUri;
+                                    if (env == "homeassistant") {
+                                        priceSensorUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor";
+                                        priceProcUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure";
+                                    } else {
+                                        priceSensorUri = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#PriceSensor";
+                                        priceProcUri = "http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#PriceProcedure";
+                                    }
+                                    var sensor = factory.GetSensorImplementation(priceSensorUri, priceProcUri);
+
+                                    var prices = new System.Collections.Generic.List<double>();
+                                    for(int i=0; i<24; i++) {
+                                        var p = await sensor.ObservePropertyValue(i);
+                                        prices.Add(Convert.ToDouble(p));
+                                    }
+                                    haJson = System.Text.Json.JsonSerializer.Serialize(new { prices });
+                                }
+
+                                var bytes = System.Text.Encoding.UTF8.GetBytes(haJson);
                                 context.Response.ContentType = "application/json";
                                 context.Response.OutputStream.Write(bytes, 0, bytes.Length);
                             } catch (Exception ex) {

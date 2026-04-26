@@ -210,6 +210,27 @@ namespace SmartNode
             };
 
             if (_haHttpClient != null) {
+                // Probe the Nord Pool entity once at startup. If HA serves it, wire a HomeAssistantSensor
+                // for MAPE-K's price input; otherwise fall back to the simulated FakepoolSensor curve.
+                const string nordpoolEntityId = "sensor.nord_pool_no5_current_price";
+                const string priceSensorUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor";
+                const string priceProcUri = "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure";
+                ISensor priceSensor;
+                try {
+                    using var probeCts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                    var probe = _haHttpClient.GetAsync($"api/states/{nordpoolEntityId}", probeCts.Token).GetAwaiter().GetResult();
+                    if (probe.IsSuccessStatusCode) {
+                        priceSensor = new HomeAssistantSensor(priceSensorUri, nordpoolEntityId, null, _haHttpClient);
+                        System.Diagnostics.Trace.WriteLine($"PriceSensor wired to HA entity {nordpoolEntityId}");
+                    } else {
+                        priceSensor = new FakepoolSensor(priceSensorUri, priceProcUri);
+                        System.Diagnostics.Trace.WriteLine($"PriceSensor fallback to FakepoolSensor (HA returned {(int)probe.StatusCode} for {nordpoolEntityId})");
+                    }
+                } catch (Exception ex) {
+                    priceSensor = new FakepoolSensor(priceSensorUri, priceProcUri);
+                    System.Diagnostics.Trace.WriteLine($"PriceSensor fallback to FakepoolSensor (probe failed: {ex.Message})");
+                }
+
                 map.Add("homeassistant", new SensorActuatorMapWrapper {
                     SensorMap = new() {
                         {
@@ -237,10 +258,8 @@ namespace SmartNode
                                 null, _haHttpClient)
                         },
                         {
-                            ("http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor",
-                            "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure"),
-                            new FakepoolSensor("http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceSensor",
-                                "http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceProcedure")
+                            (priceSensorUri, priceProcUri),
+                            priceSensor
                         },
                         {
                             ("http://www.semanticweb.org/rayan/ontologies/2025/ha/PriceDummySensor",

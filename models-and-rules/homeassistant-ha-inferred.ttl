@@ -7,101 +7,80 @@ PREFIX sosa: <http://www.w3.org/ns/sosa/>
 PREFIX ssn:  <http://www.w3.org/ns/ssn/>
 PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_0;
-                       rdf:rest   _:b0
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b1
-                     ]
-] .
-
-_:b2    rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_0;
-        rdf:rest   _:b3 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b4
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b5
-                     ]
-] .
-
-_:b6    rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator;
+_:b0    rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator;
         rdf:rest   () .
 
 [ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b7
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b8
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
   rdf:comment        "not final";
+  meta:hasActions    _:b1;
+  meta:hasActuators  _:b2
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate" , "not final";
   meta:hasActions    _:b3;
-  meta:hasActuators  _:b9
+  meta:hasActuators  _:b4
 ] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b10
+                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:rest   _:b5
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b11
+                       rdf:rest   _:b6
                      ]
 ] .
+
+_:b7    rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_0;
+        rdf:rest   _:b1 .
+
+_:b8    rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   _:b9 .
+
+_:b10   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_1;
+        rdf:rest   _:b5 .
+
+[ rdf:type           meta:ActionCombination;
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_1;
+                       rdf:rest   _:b11
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b12
+                     ]
+] .
+
+_:b13   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   () .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:HeaterActuator_1;
-                       rdf:rest   _:b12
+                       rdf:rest   _:b14
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b13
+                       rdf:rest   _:b15
                      ]
 ] .
 
-_:b14   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b8 .
-
-_:b15   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator;
-        rdf:rest   () .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b7;
-  meta:hasActuators  _:b8
-] .
-
 _:b16   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b17 .
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b9 .
 
 _:b3    rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_0;
-        rdf:rest   () .
+        rdf:first  ha:HeaterActuator_1;
+        rdf:rest   _:b1 .
 
 ha:FloorHeatingActuator_1
         rdf:type               meta:ActuationAction;
@@ -110,6 +89,17 @@ ha:FloorHeatingActuator_1
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:rest   _:b17
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b13
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:DehumidifierActuator_0;
                        rdf:rest   _:b18
@@ -120,17 +110,98 @@ ha:FloorHeatingActuator_1
                      ]
 ] .
 
-_:b20   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_0;
-        rdf:rest   _:b21 .
-
 ha:HeaterActuator_1  rdf:type  meta:ActuationAction;
         meta:hasActuator       ha:HeaterActuator;
         meta:hasActuatorState  "1"^^xsd:int .
 
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate" , "not final";
+  meta:hasActions    _:b20;
+  meta:hasActuators  _:b21
+] .
+
 _:b22   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b15 .
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b2 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator_0;
+                       rdf:rest   _:b23
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator;
+                       rdf:rest   _:b24
+                     ]
+] .
+
+_:b9    rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator;
+        rdf:rest   () .
+
+_:b25   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   () .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_1;
+                       rdf:rest   _:b26
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b27
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:rest   _:b11
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b12
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_1;
+                       rdf:rest   _:b3
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b4
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator_1;
+                       rdf:rest   _:b28
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator;
+                       rdf:rest   _:b8
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_1;
+                       rdf:rest   _:b20
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b21
+                     ]
+] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
@@ -140,97 +211,27 @@ _:b22   rdf:type   rdf:List;
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b11
+                       rdf:rest   _:b29
                      ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b23;
-  meta:hasActuators  _:b16
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b24;
-  meta:hasActuators  _:b6
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator_0;
-                       rdf:rest   _:b25
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b26
-                     ]
-] .
-
-_:b0    rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_1;
-        rdf:rest   _:b24 .
-
-_:b12   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_0;
-        rdf:rest   _:b24 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b4;
-  meta:hasActuators  _:b5
 ] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b3
+                       rdf:rest   _:b17
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b9
+                       rdf:rest   _:b13
                      ]
 ] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
-                       rdf:rest   _:b3
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b9
-                     ]
-] .
-
-_:b27   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_0;
-        rdf:rest   () .
-
-_:b17   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   () .
-
-_:b13   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b6 .
-
-_:b28   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_1;
-        rdf:rest   _:b21 .
-
-_:b7    rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_1;
-        rdf:rest   () .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b28
+                       rdf:rest   _:b10
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator;
@@ -239,218 +240,297 @@ _:b7    rdf:type   rdf:List;
 ] .
 
 _:b30   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator;
-        rdf:rest   _:b31 .
+        rdf:first  ha:FloorHeatingActuator_0;
+        rdf:rest   () .
+
+_:b31   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   _:b0 .
 
 _:b32   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b15 .
+        rdf:first  ha:FloorHeatingActuator;
+        rdf:rest   _:b25 .
 
 [ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_1;
-                       rdf:rest   _:b33
+                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:rest   _:b20
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b21
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator_0;
+                       rdf:rest   _:b33
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator;
                        rdf:rest   _:b34
                      ]
 ] .
 
+_:b14   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_1;
+        rdf:rest   _:b30 .
+
+_:b27   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b6 .
+
 [ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:first  ha:FloorHeatingActuator_0;
                        rdf:rest   _:b35
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
+                       rdf:first  ha:FloorHeatingActuator;
                        rdf:rest   _:b36
                      ]
 ] .
-
-_:b33   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator_0;
-        rdf:rest   _:b27 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b2;
-  meta:hasActuators  _:b37
-] .
-
-_:b35   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator_1;
-        rdf:rest   _:b27 .
-
-_:b31   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   () .
-
-_:b38   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_1;
-        rdf:rest   _:b39 .
 
 ha:DehumidifierActuator_1
         rdf:type               meta:ActuationAction;
         meta:hasActuator       ha:DehumidifierActuator;
         meta:hasActuatorState  "1"^^xsd:int .
 
+_:b37   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_1;
+        rdf:rest   _:b17 .
+
+_:b38   rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator_0;
+        rdf:rest   _:b39 .
+
 ha:FloorHeatingActuator_0
         rdf:type               meta:ActuationAction;
         meta:hasActuator       ha:FloorHeatingActuator;
         meta:hasActuatorState  "0"^^xsd:int .
 
-_:b37   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b9 .
-
-_:b11   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b9 .
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:rest   _:b3
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b4
+                     ]
+] .
 
 [ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b40;
-  meta:hasActuators  _:b41
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:rest   _:b37
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b40
+                     ]
 ] .
 
 ha:HeaterActuator_0  rdf:type  meta:ActuationAction;
         meta:hasActuator       ha:HeaterActuator;
         meta:hasActuatorState  "0"^^xsd:int .
 
-_:b42   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator_0;
-        rdf:rest   _:b21 .
+_:b12   rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator;
+        rdf:rest   _:b0 .
+
+_:b26   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_0;
+        rdf:rest   _:b5 .
+
+_:b41   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_0;
+        rdf:rest   _:b42 .
 
 [ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b11;
+  meta:hasActuators  _:b12
+] .
+
+_:b17   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_0;
+        rdf:rest   () .
+
+_:b5    rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_1;
+        rdf:rest   () .
+
+_:b40   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b13 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_1;
-                       rdf:rest   _:b35
+                       rdf:first  ha:FloorHeatingActuator_1;
+                       rdf:rest   _:b37
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b36
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b40
                      ]
 ] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_1;
-                       rdf:rest   _:b0
+                       rdf:first  ha:FloorHeatingActuator_1;
+                       rdf:rest   _:b5
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b1
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b6
                      ]
 ] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "not final";
-  meta:hasActions    _:b35;
-  meta:hasActuators  _:b36
+  meta:hasActions    _:b42;
+  meta:hasActuators  _:b0
 ] .
 
-_:b39   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator_0;
-        rdf:rest   () .
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b23;
+  meta:hasActuators  _:b24
+] .
 
-_:b43   rdf:type   rdf:List;
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b5;
+  meta:hasActuators  _:b6
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b33;
+  meta:hasActuators  _:b34
+] .
+
+_:b24   rdf:type   rdf:List;
         rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b15 .
+        rdf:rest   _:b2 .
+
+[ rdf:type           meta:ActionCombination;
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_1;
+                       rdf:rest   _:b18
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b19
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b43;
+  meta:hasActuators  _:b32
+] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_1;
+                       rdf:rest   _:b44
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b16
+                     ]
+] .
+
+_:b45   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   _:b25 .
+
+[ rdf:type           meta:ActionCombination;
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:rest   _:b38
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b46
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:rest   _:b41
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b31
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate" , "not final";
+  meta:hasActions    _:b44;
+  meta:hasActuators  _:b16
+] .
+
+_:b44   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_1;
+        rdf:rest   _:b30 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:rest   _:b47
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b45
+                     ]
+] .
+
+_:b18   rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator_1;
+        rdf:rest   _:b42 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b47;
+  meta:hasActuators  _:b45
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator_0;
+                       rdf:rest   _:b28
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:HeaterActuator;
+                       rdf:rest   _:b8
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:DehumidifierActuator_1;
                        rdf:rest   _:b38
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b32
-                     ]
-] .
-
-_:b44   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_0;
-        rdf:rest   _:b24 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator_0;
-                       rdf:rest   _:b12
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b13
-                     ]
-] .
-
-_:b1    rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b6 .
-
-_:b26   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b6 .
-
-_:b41   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b8 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator_0;
-                       rdf:rest   _:b45
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b22
-                     ]
-] .
-
-_:b29   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b31 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b45;
-  meta:hasActuators  _:b22
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b42;
-  meta:hasActuators  _:b30
-] .
-
-[ rdf:type           meta:ActionCombination;
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_0;
                        rdf:rest   _:b46
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b47
-                     ]
-] .
-
-_:b36   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator;
-        rdf:rest   _:b17 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b23
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b16
                      ]
 ] .
 
@@ -460,84 +540,46 @@ ha:DehumidifierActuator_0
         meta:hasActuatorState  "0"^^xsd:int .
 
 [ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b10;
-  meta:hasActuators  _:b11
+  rdf:comment        "not final";
+  meta:hasActions    _:b35;
+  meta:hasActuators  _:b36
 ] .
 
-_:b45   rdf:type   rdf:List;
+_:b35   rdf:type   rdf:List;
         rdf:first  ha:DehumidifierActuator_0;
         rdf:rest   _:b39 .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:first  ha:DehumidifierActuator_1;
                        rdf:rest   _:b7
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b8
-                     ]
-] .
-
-_:b47   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator;
-        rdf:rest   _:b31 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_0;
-                       rdf:rest   _:b44
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b48
+                       rdf:rest   _:b22
                      ]
 ] .
-
-_:b25   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_1;
-        rdf:rest   _:b24 .
 
 _:b4    rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_1;
-        rdf:rest   _:b27 .
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b2 .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b49
+                       rdf:first  ha:HeaterActuator_0;
+                       rdf:rest   _:b14
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b14
+                       rdf:first  ha:HeaterActuator;
+                       rdf:rest   _:b15
                      ]
 ] .
 
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b0;
-  meta:hasActuators  _:b1
-] .
-
-_:b8    rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   () .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b20;
-  meta:hasActuators  _:b50
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b28;
-  meta:hasActuators  _:b29
-] .
+_:b33   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_0;
+        rdf:rest   _:b1 .
 
 ha:OfficeHumidityOptimalCondition
         rdf:type          owl:NamedIndividual , meta:OptimalCondition;
@@ -549,7 +591,7 @@ ha:OfficeHumidityOptimalCondition
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withConstraintType>
                                                                                         meta:hasConstraint;
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withIdentifier>
-                                                                                        _:b51;
+                                                                                        _:b48;
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withOperatorCheck>
                                                                                         meta:greaterThanOrEqualTo;
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withOptimalCondition>
@@ -569,7 +611,7 @@ ha:OfficeHumidityOptimalCondition
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withConstraintType>
                                                                                         meta:hasConstraint;
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withIdentifier>
-                                                                                        _:b51;
+                                                                                        _:b48;
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withOperatorCheck>
                                                                                         meta:lessThanOrEqualTo;
                                                                                 <http://www.semanticweb.org/ivans/ontologies/2025/instance-model-1#withOptimalCondition>
@@ -594,78 +636,80 @@ ha:OfficeHumidityOptimalCondition
         ssn:forProperty   ha:OfficeHumidity .
 
 [ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate" , "not final";
+  meta:hasActions    _:b7;
+  meta:hasActuators  _:b22
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:rest   _:b49
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b50
+                     ]
+] .
+
+_:b46   rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator;
+        rdf:rest   _:b25 .
+
+_:b43   rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator_1;
+        rdf:rest   _:b39 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b30;
+  meta:hasActuators  _:b9
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_1;
+                       rdf:rest   _:b51
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b52
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_1;
+                       rdf:rest   _:b35
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b36
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:HeaterActuator_1;
-                       rdf:rest   _:b45
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b22
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
                        rdf:rest   _:b23
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b16
+                       rdf:first  ha:HeaterActuator;
+                       rdf:rest   _:b24
                      ]
 ] .
 
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
-                       rdf:rest   _:b2
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b37
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b18;
-  meta:hasActuators  _:b19
-] .
-
-_:b34   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator;
-        rdf:rest   _:b17 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b52;
-  meta:hasActuators  _:b43
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b27;
-  meta:hasActuators  _:b17
-] .
-
-_:b10   rdf:type   rdf:List;
+_:b42   rdf:type   rdf:List;
         rdf:first  ha:HeaterActuator_1;
-        rdf:rest   _:b3 .
+        rdf:rest   () .
 
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b21;
-  meta:hasActuators  _:b31
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b12;
-  meta:hasActuators  _:b13
-] .
+_:b19   rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator;
+        rdf:rest   _:b0 .
 
 ha:OfficeTemperatureOptimalCondition
         rdf:type          owl:NamedIndividual , meta:OptimalCondition;
@@ -722,129 +766,44 @@ ha:OfficeTemperatureOptimalCondition
         ssn:forProperty   ha:OfficeTemperature .
 
 [ rdf:type           meta:ActionCombination;
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:rest   _:b43
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b32
+                     ]
+] .
+
+[ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b20
+                       rdf:rest   _:b41
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b50
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator_0;
-                       rdf:rest   _:b52
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b43
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
-                       rdf:rest   _:b4
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b5
+                       rdf:rest   _:b31
                      ]
 ] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "not final";
-  meta:hasActions    _:b39;
-  meta:hasActuators  _:b15
+  meta:hasActions    _:b41;
+  meta:hasActuators  _:b31
 ] .
-
-_:b9    rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   () .
 
 [ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b2
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b37
-                     ]
+  rdf:comment        "not final";
+  meta:hasActions    _:b49;
+  meta:hasActuators  _:b50
 ] .
-
-_:b48   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b6 .
 
 [ rdf:type           meta:ActionCombination;
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:DehumidifierActuator_1;
-                       rdf:rest   _:b42
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b30
-                     ]
-] .
-
-_:b18   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_0;
-        rdf:rest   _:b39 .
-
-_:b40   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_1;
-        rdf:rest   _:b7 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator_1;
-                       rdf:rest   _:b25
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b26
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
-                       rdf:rest   _:b20
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b50
-                     ]
-] .
-
-_:b52   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_1;
-        rdf:rest   _:b39 .
-
-_:b23   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator_0;
-        rdf:rest   _:b27 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b25;
-  meta:hasActuators  _:b26
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_0;
-                       rdf:rest   _:b38
+                       rdf:rest   _:b43
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:DehumidifierActuator;
@@ -856,179 +815,220 @@ _:b23   rdf:type   rdf:List;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator_0;
-                       rdf:rest   _:b40
+                       rdf:rest   _:b26
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
                        rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b41
+                       rdf:rest   _:b27
                      ]
 ] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_1;
-                       rdf:rest   _:b40
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b41
-                     ]
-] .
-
-_:b50   rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b31 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
-                       rdf:rest   _:b28
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b29
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b49;
-  meta:hasActuators  _:b14
-] .
-
-_:b49   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_0;
-        rdf:rest   _:b7 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b38;
-  meta:hasActuators  _:b32
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b46;
-  meta:hasActuators  _:b47
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator_0;
-                       rdf:rest   _:b49
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:FloorHeatingActuator;
-                       rdf:rest   _:b14
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_1;
-                       rdf:rest   _:b46
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b47
-                     ]
-] .
-
-_:b5    rdf:type   rdf:List;
-        rdf:first  ha:DehumidifierActuator;
-        rdf:rest   _:b17 .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "duplicate";
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_1;
-                       rdf:rest   _:b44
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b48
-                     ]
-] .
-
-[ rdf:type           meta:ActionCombination;
-  rdf:comment        "not final";
-  meta:hasActions    _:b33;
-  meta:hasActuators  _:b34
-] .
-
-_:b19   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator;
-        rdf:rest   _:b15 .
-
-_:b46   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator_1;
-        rdf:rest   _:b21 .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
                        rdf:first  ha:HeaterActuator_1;
-                       rdf:rest   _:b52
-                     ];
-  meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:HeaterActuator;
-                       rdf:rest   _:b43
-                     ]
-] .
-
-_:b21   rdf:type   rdf:List;
-        rdf:first  ha:HeaterActuator_1;
-        rdf:rest   () .
-
-[ rdf:type           meta:ActionCombination;
-  meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_0;
                        rdf:rest   _:b33
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
+                       rdf:first  ha:HeaterActuator;
                        rdf:rest   _:b34
                      ]
 ] .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate" , "not final";
-  meta:hasActions    _:b44;
-  meta:hasActuators  _:b48
+  meta:hasActions    _:b37;
+  meta:hasActuators  _:b40
 ] .
-
-_:b24   rdf:type   rdf:List;
-        rdf:first  ha:FloorHeatingActuator_1;
-        rdf:rest   () .
 
 [ rdf:type           meta:ActionCombination;
   rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_1;
-                       rdf:rest   _:b18
+                       rdf:first  ha:FloorHeatingActuator_1;
+                       rdf:rest   _:b47
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b19
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b45
                      ]
 ] .
 
 [ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
   meta:hasActions    [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator_0;
-                       rdf:rest   _:b42
+                       rdf:first  ha:FloorHeatingActuator_0;
+                       rdf:rest   _:b51
                      ];
   meta:hasActuators  [ rdf:type   rdf:List;
-                       rdf:first  ha:DehumidifierActuator;
-                       rdf:rest   _:b30
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b52
                      ]
 ] .
 
+_:b15   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   _:b9 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate" , "not final";
+  meta:hasActions    _:b10;
+  meta:hasActuators  _:b29
+] .
+
+_:b2    rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator;
+        rdf:rest   () .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b14;
+  meta:hasActuators  _:b15
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator_1;
+                       rdf:rest   _:b49
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:FloorHeatingActuator;
+                       rdf:rest   _:b50
+                     ]
+] .
+
+_:b39   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_0;
+        rdf:rest   () .
+
+_:b11   rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator_0;
+        rdf:rest   _:b42 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b39;
+  meta:hasActuators  _:b25
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b28;
+  meta:hasActuators  _:b8
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:rest   _:b7
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b22
+                     ]
+] .
+
+_:b52   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b13 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate" , "not final";
+  meta:hasActions    _:b26;
+  meta:hasActuators  _:b27
+] .
+
+_:b51   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_0;
+        rdf:rest   _:b17 .
+
+_:b6    rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   () .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b38;
+  meta:hasActuators  _:b46
+] .
+
+_:b36   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   _:b25 .
+
+_:b29   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b6 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate" , "not final";
+  meta:hasActions    _:b51;
+  meta:hasActuators  _:b52
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b18;
+  meta:hasActuators  _:b19
+] .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "not final";
+  meta:hasActions    _:b17;
+  meta:hasActuators  _:b13
+] .
+
+_:b50   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   _:b0 .
+
+_:b49   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_1;
+        rdf:rest   _:b42 .
+
+_:b21   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator;
+        rdf:rest   _:b9 .
+
+_:b34   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator;
+        rdf:rest   _:b2 .
+
+_:b1    rdf:type   rdf:List;
+        rdf:first  ha:FloorHeatingActuator_1;
+        rdf:rest   () .
+
+_:b47   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_1;
+        rdf:rest   _:b39 .
+
+[ rdf:type           meta:ActionCombination;
+  rdf:comment        "duplicate";
+  meta:hasActions    [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator_0;
+                       rdf:rest   _:b44
+                     ];
+  meta:hasActuators  [ rdf:type   rdf:List;
+                       rdf:first  ha:DehumidifierActuator;
+                       rdf:rest   _:b16
+                     ]
+] .
+
+_:b20   rdf:type   rdf:List;
+        rdf:first  ha:HeaterActuator_0;
+        rdf:rest   _:b30 .
+
+_:b28   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_0;
+        rdf:rest   _:b30 .
+
+_:b23   rdf:type   rdf:List;
+        rdf:first  ha:DehumidifierActuator_1;
+        rdf:rest   _:b1 .
+
 ha:price  rdf:type     owl:NamedIndividual , sosa:ObservableProperty;
-        meta:hasValue  "1.803"^^xsd:double .
+        meta:hasValue  "1.308205"^^xsd:double .
 
 ha:OfficeHumidity  rdf:type  owl:NamedIndividual , sosa:ObservableProperty;
         meta:hasValue  "28"^^xsd:double .
@@ -1087,7 +1087,7 @@ ha:MapekCycle  rdf:type  owl:NamedIndividual , ssn:Output , ssn:Property;
         meta:hasValue  "0"^^xsd:int .
 
 ha:PriceOutput  rdf:type  owl:NamedIndividual , ssn:Output , ssn:Property;
-        meta:hasValue  "2.026"^^xsd:double .
+        meta:hasValue  "1.03641"^^xsd:double .
 
 ha:PriceProcedure  rdf:type  owl:NamedIndividual , sosa:Procedure;
         ssn:hasInput   ha:MapekCycle;
@@ -1133,7 +1133,7 @@ ha:TemperatureLowerLimit
         meta:hasValue  "18.0"^^xsd:double .
 
 ha:TempSensor2Output  rdf:type  owl:NamedIndividual , ssn:Output , ssn:Property;
-        meta:hasValue  "21.4"^^xsd:double .
+        meta:hasValue  "19.6"^^xsd:double .
 
 ha:TempSensor1Procedure
         rdf:type       owl:NamedIndividual , sosa:Procedure;
@@ -1144,7 +1144,7 @@ ha:TempSensor1  rdf:type  owl:NamedIndividual , sosa:Sensor;
         ssn:implements  ha:TempSensor1Procedure .
 
 ha:OfficeTemperature  rdf:type  owl:NamedIndividual , sosa:ObservableProperty;
-        meta:hasValue  "21.4"^^xsd:double .
+        meta:hasValue  "19.6"^^xsd:double .
 
 ha:EnergyConsumption  rdf:type  owl:NamedIndividual , sosa:ObservableProperty;
         meta:hasValue  "0"^^xsd:double .
@@ -1166,7 +1166,7 @@ ha:OfficeHumidityDecrease
         ssn:forProperty           ha:OfficeHumidity .
 
 ha:TempSensor1Output  rdf:type  owl:NamedIndividual , ssn:Output , ssn:Property;
-        meta:hasValue  "21.4"^^xsd:double .
+        meta:hasValue  "19.6"^^xsd:double .
 
 ha:EnergyConsumptionMeterProcedure
         rdf:type       owl:NamedIndividual , sosa:Procedure;
