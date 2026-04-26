@@ -382,7 +382,7 @@ namespace SmartNode
                                 var registry = host.Services.GetRequiredService<HomeAssistantRegistry>();
                                 var entitiesList = registry.SummaryForPrompt();
 
-                                var systemPrompt = $@"You are an NLU module for a smart-home assistant. Given a user message (in French or English), reply ONLY with a JSON object (no prose, no code fences) matching this schema:
+                                var systemPrompt = $@"You are an NLU module for a smart-home assistant. The user may write in English or French. Reply ONLY with a JSON object (no prose, no code fences) matching this schema:
 {{
   ""intent"": one of [""greeting"", ""capabilities"", ""smalltalk"", ""price_current"", ""price_cheapest"", ""price_expensive"", ""price_average"", ""set_temperature"", ""call_service"", ""query_state"", ""optimize_schedule"", ""out_of_scope"", ""unknown""],
   ""domain"": null | string (for call_service, e.g. ""light"", ""scene"", ""cover"", ""climate""),
@@ -392,10 +392,11 @@ namespace SmartNode
   ""value"": null | number (for direct orders or legacy set_temperature),
   ""duration_hours"": null | integer (required for optimize_schedule),
   ""deadline_hour"": null | integer 0-24 (required for optimize_schedule),
+  ""start_hour"": null | integer 0-23 (optional, only when the user gives an explicit time window like ""between 2am and 7am""),
   ""budget_max"": null | number in NOK (optional),
   ""power_kw"": null | number in kW,
-  ""target"": null | string (for optimize_schedule),
-  ""answer"": a short French answer for the user (1-2 sentences)
+  ""target"": null | string (for optimize_schedule, e.g. ""CarCharger"" or ""HeaterActuator""),
+  ""answer"": a short English answer for the user (1-2 sentences)
 }}
 
 Here are the AVAILABLE entities in the home:
@@ -403,13 +404,15 @@ Here are the AVAILABLE entities in the home:
 
 Rules:
 - To control ANY entity discovered above (lights, scenes, switches, media players, scripts), use intent=""call_service"". Set the correct domain, service, and entity_id. Put any arguments in data.
-  * e.g. ""allume la cuisine"" -> intent=""call_service"", domain=""light"", service=""turn_on"", entity_id=""light.showcase_kitchen_light"", data={{""entity_id"": ""light.showcase_kitchen_light""}}
-  * e.g. ""desactive le mode cinema"" -> intent=""call_service"", domain=""input_boolean"", service=""turn_off"", entity_id=""input_boolean.showcase_movie_mode"", data={{""entity_id"": ""input_boolean.showcase_movie_mode""}}
-- IMPORTANT: To turn ON or OFF a mode (like Movie Mode or Sleep Mode), ALWAYS prefer using the 'input_boolean' entity rather than 'scene'. Scenes cannot be turned off.
-- If the user implies a macro-action like leaving the home (""je pars"", ""au revoir"", ""je vais bosser"") or going to sleep, LOOK for a relevant 'script' (e.g. script.showcase_leave_home, script.showcase_good_night) or 'scene' and call it!
-- For ""mets la temperature a 21 degres"" (DIRECT ORDER) -> you can still use intent=""set_temperature"", value=21, OR use call_service on the climate entity if available.
-- For PLANNED/OPTIMIZED tasks with a deadline and cost concern like ""charge ma voiture a 100% pour 7h en heures creuses"" -> intent=""optimize_schedule"".
-- For questions about current states (temperature, humidity, is a door open) -> intent=""query_state"", and set ""entity_id"" to the entity they are asking about.
+  * e.g. ""turn on the kitchen"" -> intent=""call_service"", domain=""light"", service=""turn_on"", entity_id=""light.showcase_kitchen_light"", data={{""entity_id"": ""light.showcase_kitchen_light""}}
+  * e.g. ""turn off movie mode"" -> intent=""call_service"", domain=""input_boolean"", service=""turn_off"", entity_id=""input_boolean.showcase_movie_mode"", data={{""entity_id"": ""input_boolean.showcase_movie_mode""}}
+- IMPORTANT: To turn ON or OFF a mode (like Movie Mode or Sleep Mode), ALWAYS prefer the 'input_boolean' entity rather than 'scene'. Scenes cannot be turned off.
+- If the user implies a macro-action like leaving home (""I'm leaving"", ""bye"", ""I'm going to work"") or going to bed (""good night""), LOOK for a relevant 'script' (e.g. script.showcase_leave_home, script.showcase_good_night) or 'scene' and call it.
+- For ""set the temperature to 21 degrees"" (DIRECT ORDER) -> use intent=""set_temperature"", value=21, OR call_service on the climate entity if available.
+- PRIORITY RULE: any request to charge a car / EV / Tesla / vehicle MUST be intent=""optimize_schedule"", even when the user mentions ""cheapest"" or ""lowest price"" — those are constraints, NOT a price-query intent.
+  * e.g. ""charge the Tesla to 100% by 7am at the cheapest rate"" -> intent=""optimize_schedule"", target=""CarCharger"", duration_hours=4, deadline_hour=7, power_kw=11
+  * e.g. ""charge the car between 2am and 7am at the lowest price"" -> intent=""optimize_schedule"", target=""CarCharger"", duration_hours=5, start_hour=2, deadline_hour=7, power_kw=11
+- For questions about current states (temperature, humidity, is a door open) -> intent=""query_state"", and set ""entity_id"" to the asked entity.
 - For anything outside smart home / energy -> intent=""out_of_scope"".";
 
                                 var payload = new {
@@ -535,6 +538,10 @@ Rules:
                                     ? durEl.GetInt32() : 4;
                                 int deadlineHour = doc.RootElement.TryGetProperty("deadline_hour", out var dhEl) && dhEl.ValueKind == System.Text.Json.JsonValueKind.Number
                                     ? dhEl.GetInt32() : 24;
+                                // Optional: explicit lower bound on candidate hours, for windows like "between 2am and 7am".
+                                // Defaults to 0 to preserve the original behaviour for callers that don't send it.
+                                int startHour = doc.RootElement.TryGetProperty("start_hour", out var shEl) && shEl.ValueKind == System.Text.Json.JsonValueKind.Number
+                                    ? shEl.GetInt32() : 0;
                                 double? budget = doc.RootElement.TryGetProperty("budget_max", out var bmEl) && bmEl.ValueKind == System.Text.Json.JsonValueKind.Number
                                     ? bmEl.GetDouble() : (double?)null;
                                 double powerKw = doc.RootElement.TryGetProperty("power_kw", out var pkEl) && pkEl.ValueKind == System.Text.Json.JsonValueKind.Number
@@ -558,9 +565,11 @@ Rules:
                                 for (int i = 0; i < 24; i++) prices[i] = Convert.ToDouble(await sensor.ObservePropertyValue(i));
 
                                 int effectiveDeadline = Math.Clamp(deadlineHour, 1, 24);
-                                int needed = Math.Clamp(duration, 1, effectiveDeadline);
+                                int effectiveStart    = Math.Clamp(startHour, 0, Math.Max(0, effectiveDeadline - 1));
+                                int windowSize        = Math.Max(1, effectiveDeadline - effectiveStart);
+                                int needed            = Math.Clamp(duration, 1, windowSize);
 
-                                var chosen = Enumerable.Range(0, effectiveDeadline)
+                                var chosen = Enumerable.Range(effectiveStart, windowSize)
                                     .OrderBy(h => prices[h])
                                     .Take(needed)
                                     .OrderBy(h => h)
@@ -579,7 +588,8 @@ Rules:
                                         hour = h,
                                         price = Math.Round(prices[h], 2),
                                         on = chosen.Contains(h),
-                                        before_deadline = h < effectiveDeadline
+                                        before_deadline = h < effectiveDeadline,
+                                        in_window = h >= effectiveStart && h < effectiveDeadline
                                     });
                                 }
 
@@ -587,6 +597,7 @@ Rules:
                                     target,
                                     chosen_hours = chosen,
                                     duration_hours = needed,
+                                    start_hour = effectiveStart,
                                     deadline_hour = effectiveDeadline,
                                     power_kw = powerKw,
                                     total_cost_nok = Math.Round(totalCost, 2),
@@ -602,7 +613,7 @@ Rules:
                                 var bytes = System.Text.Encoding.UTF8.GetBytes(json);
                                 context.Response.ContentType = "application/json";
                                 context.Response.OutputStream.Write(bytes, 0, bytes.Length);
-                                logger.LogInformation($"[CHATBOX] Optimize: target={target}, {needed}h before {effectiveDeadline}h, chosen=[{string.Join(",", chosen)}], cost={totalCost:F2} NOK ({savingsPct:F0}% saved)");
+                                logger.LogInformation($"[CHATBOX] Optimize: target={target}, {needed}h in [{effectiveStart}h..{effectiveDeadline}h), chosen=[{string.Join(",", chosen)}], cost={totalCost:F2} NOK ({savingsPct:F0}% saved)");
                             } catch (Exception ex) {
                                 context.Response.StatusCode = 500;
                                 var bytes = System.Text.Encoding.UTF8.GetBytes(ex.Message);

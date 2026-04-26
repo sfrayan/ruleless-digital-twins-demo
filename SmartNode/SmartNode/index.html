@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assistant Maison Connectée (RDT)</title>
+    <title>Smart Home Assistant (RDT)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -87,9 +87,15 @@
         .schedule-row .st-completed { color: var(--text-muted); }
         .schedule-row .st-cancelled { color: #fca5a5; }
         .schedule-row .st-failed { color: #ef4444; }
+        .quick-actions-label {
+            padding: 10px 16px 0; background: rgba(0,0,0,0.15);
+            border-top: 1px solid var(--glass-border);
+            font-size: 0.65rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
         .quick-chips {
-            padding: 8px 16px 0; display: flex; flex-wrap: wrap; gap: 6px;
-            border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.15);
+            padding: 6px 16px 0; display: flex; flex-wrap: wrap; gap: 6px;
+            background: rgba(0,0,0,0.15);
         }
         .chip {
             background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35);
@@ -135,24 +141,24 @@
 
     <div class="chat-container">
         <div class="chat-header">
-            <h1>Assistant Maison Connectée</h1>
+            <h1>Smart Home Assistant</h1>
             <div class="subtitle">
                 <span class="dot-status" id="status-dot"></span>
-                <span id="status-text">connexion…</span>
+                <span id="status-text">connecting…</span>
             </div>
         </div>
 
         <div class="dashboard" id="dashboard">
-            <div class="dash-card"><div class="label">Température</div><div class="value" id="dash-temp">—</div></div>
-            <div class="dash-card"><div class="label">Puissance</div><div class="value" id="dash-power">—</div></div>
-            <div class="dash-card"><div class="label">Qualité air</div><div class="value" id="dash-air">—</div></div>
+            <div class="dash-card"><div class="label">Temperature</div><div class="value" id="dash-temp">—</div></div>
+            <div class="dash-card"><div class="label">Power</div><div class="value" id="dash-power">—</div></div>
+            <div class="dash-card"><div class="label">Air quality</div><div class="value" id="dash-air">—</div></div>
         </div>
 
         <div class="schedules-panel" id="schedules-panel"></div>
 
         <div class="chat-messages" id="chat-messages">
             <div class="message bot-message">
-                Bonjour ! Je suis l'assistant RDT de votre maison. Demandez-moi d'<b>allumer/éteindre</b> une lumière, de <b>régler la température</b>, ou posez-moi une question sur l'<b>état</b> de la maison ou le <b>prix</b> de l'énergie.
+                Hello! I'm your RDT smart-home assistant. Ask me to <b>turn lights on/off</b>, <b>set the temperature</b>, check the <b>house status</b>, look up the <b>energy price</b>, or <b>schedule a Tesla charge</b> at the cheapest hours.
             </div>
         </div>
 
@@ -162,23 +168,19 @@
             <div class="dot"></div>
         </div>
 
-        <details class="discovered-entities" id="discovered-entities">
-            <summary>Entités découvertes</summary>
-            <div id="entities-list">Chargement...</div>
-        </details>
-
+        <div class="quick-actions-label">Quick actions</div>
         <div class="quick-chips" id="quick-chips">
-            <span class="chip" data-q="allume le salon">🛋️ Allume salon</span>
-            <span class="chip" data-q="éteins la cuisine">🍳 Éteins cuisine</span>
-            <span class="chip" data-q="mets la température à 22 degrés">🌡️ 22°C</span>
-            <span class="chip" data-q="quelle est la température ?">📊 État maison</span>
-            <span class="chip" data-q="quel est le prix ?">💰 Prix</span>
-            <span class="chip" data-q="charge la voiture à 100% pour 7h du matin">🚗 Charge Tesla nuit</span>
+            <span class="chip" data-q="turn on the living room">🛋️ Turn on living room</span>
+            <span class="chip" data-q="turn off the kitchen">🍳 Turn off kitchen</span>
+            <span class="chip" data-q="set the temperature to 22 degrees">🌡️ Set 22°C</span>
+            <span class="chip" data-q="what's the house status">📊 House status</span>
+            <span class="chip" data-q="what is the energy price">💰 Energy price</span>
+            <span class="chip" data-q="charge the Tesla to 100% by 7am at the cheapest rate">🚗 Charge Tesla overnight</span>
         </div>
 
         <div class="chat-input-container">
-            <input type="text" class="chat-input" id="chat-input" placeholder="Posez votre question..." autocomplete="off">
-            <button class="send-btn" id="send-btn" aria-label="Envoyer">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask me anything…" autocomplete="off">
+            <button class="send-btn" id="send-btn" aria-label="Send">
                 <svg viewBox="0 0 24 24">
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
                 </svg>
@@ -213,7 +215,7 @@
                 haStates = {};
                 for (const e of arr) haStates[e.entity_id] = e;
                 statusDot.className = 'dot-status ok';
-                statusText.textContent = 'SmartNode + HA connectés';
+                statusText.textContent = 'SmartNode + HA connected';
                 const temp = haStates['sensor.showcase_living_room_temperature'];
                 const pow  = haStates['sensor.showcase_estimated_power_draw'];
                 const air  = haStates['sensor.showcase_air_quality_index'];
@@ -222,42 +224,13 @@
                 document.getElementById('dash-air').textContent   = air  ? `AQI ${parseFloat(air.state).toFixed(0)}`     : '—';
             } catch (e) {
                 statusDot.className = 'dot-status ko';
-                statusText.textContent = 'SmartNode injoignable (lancez dotnet run)';
-            }
-        }
-
-        async function refreshEntitiesFull() {
-            try {
-                const r = await fetch(`${API}/api/entities_full`);
-                if (!r.ok) return;
-                const entities = await r.json();
-                const list = document.getElementById('entities-list');
-                
-                const byDomain = {};
-                for (const e of entities) {
-                    if (!byDomain[e.Domain]) byDomain[e.Domain] = [];
-                    byDomain[e.Domain].push(e);
-                }
-                
-                let html = '';
-                for (const domain in byDomain) {
-                    html += `<strong>${domain}</strong><ul>`;
-                    for (const e of byDomain[domain]) {
-                        html += `<li>${e.FriendlyName} <code>${e.EntityId}</code></li>`;
-                    }
-                    html += `</ul>`;
-                }
-                list.innerHTML = html;
-            } catch (e) {
-                document.getElementById('entities-list').textContent = "Erreur de chargement";
+                statusText.textContent = 'SmartNode unreachable (run dotnet run)';
             }
         }
 
         refreshPrices();
         refreshHaStates();
-        refreshEntitiesFull();
         setInterval(refreshHaStates, 5000);
-        setInterval(refreshEntitiesFull, 30000);
 
         function addMessage(text, isUser = false) {
             const msgDiv = document.createElement('div');
@@ -300,42 +273,96 @@
             return { source: 'keyword', ...keywordFallback(text) };
         }
 
+        // Convert "7am"/"7pm"/"7h" tokens to a 24h integer. Accepts plain digits too.
+        function toHour24(numStr, suffix) {
+            let n = parseInt(numStr, 10);
+            if (isNaN(n)) return null;
+            const s = (suffix || '').toLowerCase();
+            if (s === 'pm' && n < 12) n += 12;
+            if (s === 'am' && n === 12) n = 0;
+            return Math.max(0, Math.min(24, n));
+        }
+
         function keywordFallback(text) {
             const t = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-            const num = (t.match(/(\d+)/) || [])[1];
-            const pickLight = () => /cuisine|kitchen/.test(t) ? 'KitchenLight'
-                                  : /couloir|hall/.test(t)    ? 'HallwayLight'
-                                  : /purif|air/.test(t)       ? 'AirPurifier'
-                                                              : 'LivingRoomLight';
-            if (/(allume|allumer|\bon\b)/.test(t))
-                return { intent: 'actuate', target: pickLight(), value: true,  answer: '' };
-            if (/(eteint|eteins|eteindre|coupe|\boff\b)/.test(t))
-                return { intent: 'actuate', target: pickLight(), value: false, answer: '' };
-            if (/(temperature|degre|chauff)/.test(t) && num)
-                return { intent: 'set_temperature', target: null, value: parseInt(num, 10), answer: '' };
-            if (/(prix).*(moins|bas|baisse|meilleur)/.test(t)) return { intent: 'price_cheapest',  target: null, value: null, answer: '' };
-            if (/(prix).*(plus|haut|pire)/.test(t))            return { intent: 'price_expensive', target: null, value: null, answer: '' };
-            if (/moyen/.test(t) && /prix|cout/.test(t))         return { intent: 'price_average',   target: null, value: null, answer: '' };
-            if (/prix|cout|tarif|combien/.test(t))              return { intent: 'price_current',   target: null, value: null, answer: '' };
-            if (/temp|humidit|puissance|etat|qualite/.test(t))  return { intent: 'query_state',     target: null, value: null, answer: '' };
-            if (/bonjour|salut|hey|coucou/.test(t))             return { intent: 'greeting',        target: null, value: null, answer: '' };
-            if (/quoi|sais|peux|fais/.test(t))                  return { intent: 'capabilities',    target: null, value: null, answer: '' };
 
-            // Optimize schedule: planified task with deadline + cost concern.
-            if (/(planifie|optimise|charge.*nuit|tesla|voiture|heures?.creuses?|moins.cher.*nuit|a\s+\d+h.*creuse)/.test(t)) {
-                const durMatch = t.match(/(\d+)\s*h(?:eures?)?\s*(?:de|pour)?/);
-                const duration = durMatch ? parseInt(durMatch[1], 10) : 4;
-                // Deadline: "pour 7h" / "à 8h du matin" / "avant 6h"
-                const dlMatch = t.match(/(?:pour|avant|a|à)\s+(\d{1,2})\s*h/);
-                const deadline = dlMatch ? parseInt(dlMatch[1], 10) : 24;
-                const bgMatch = t.match(/budget.*?(\d+)|max.*?(\d+)\s*(?:nok|couronne)/);
-                const budget = bgMatch ? parseInt(bgMatch[1] || bgMatch[2], 10) : null;
-                const isCar = /tesla|voiture|vehicule|auto/.test(t);
-                const isHeat = /chauff|radiateur|heater/.test(t);
-                const power = isCar ? 11 : (isHeat ? 2 : 1);
-                const target = isCar ? 'CarCharger' : (isHeat ? 'HeaterActuator' : null);
-                return { intent: 'optimize_schedule', target, value: null, duration_hours: duration, deadline_hour: deadline, budget_max: budget, power_kw: power, answer: '' };
+            // ---------- 1. optimize_schedule (HIGHEST priority) ----------
+            // A car/EV charging request must beat any "cheapest/lowest price" intent that would
+            // otherwise hijack the message. We trigger optimize_schedule whenever:
+            //   (vehicle keyword AND charge keyword) OR
+            //   (charge keyword AND (deadline OR cost-concern keyword OR explicit time window))
+            const vehicleKw = /\b(tesla|car|ev|vehicle|voiture|vehicule|auto)\b/.test(t);
+            const chargeKw  = /\b(charge|charging|recharge|recharger)\b/.test(t);
+            const costKw    = /(cheapest|lowest|off[- ]?peak|economical|save\s+money|optimi[sz]e\s+cost|moins.cher|heures?.creuses?)/.test(t);
+            // Window: "between 2am and 7am", "from 2 to 7", "entre 2h et 7h"
+            const winMatch  = t.match(/(?:between|from|entre)\s+(\d{1,2})\s*(am|pm|h|:00)?\s*(?:and|to|et|-|–)\s+(\d{1,2})\s*(am|pm|h|:00)?/);
+            // Deadline alone: "by 7am", "before 7am", "at 7am", "pour 7h", "avant 6h"
+            const dlMatch   = t.match(/(?:by|before|at|until|pour|avant|a|à)\s+(\d{1,2})\s*(am|pm|h|:00)?/);
+            const hasWindow = !!winMatch;
+            const hasDeadline = !!dlMatch;
+
+            if ((vehicleKw && chargeKw) || (chargeKw && (hasDeadline || hasWindow || costKw))) {
+                let startHour = null;
+                let deadlineHour = 24;
+                if (hasWindow) {
+                    startHour    = toHour24(winMatch[1], winMatch[2]);
+                    deadlineHour = toHour24(winMatch[3], winMatch[4]);
+                    if (deadlineHour <= startHour) deadlineHour = (deadlineHour + 24); // overnight wrap-around → cap to 24
+                    deadlineHour = Math.min(24, deadlineHour);
+                } else if (hasDeadline) {
+                    deadlineHour = toHour24(dlMatch[1], dlMatch[2]);
+                }
+                // Duration: explicit "for 4 hours" / "pendant 4h" / "4 hours of charge", else default to 4.
+                const durMatch = t.match(/(\d+)\s*(?:hours?|h(?:eures?)?)\s*(?:of\s+charge|de\s+charge|pour|de)?/);
+                const duration = durMatch ? parseInt(durMatch[1], 10)
+                              : (startHour != null ? Math.max(1, deadlineHour - startHour) : 4);
+                const bgMatch = t.match(/budget.*?(\d+)|max.*?(\d+)\s*(?:nok|kr|couronne)/);
+                const budget  = bgMatch ? parseInt(bgMatch[1] || bgMatch[2], 10) : null;
+                const isHeat  = /\b(heat|heater|heating|chauff|radiateur)\b/.test(t);
+                const power   = vehicleKw ? 11 : (isHeat ? 2 : 1);
+                const target  = vehicleKw ? 'CarCharger' : (isHeat ? 'HeaterActuator' : null);
+                return {
+                    intent: 'optimize_schedule', target, value: null,
+                    duration_hours: duration, deadline_hour: deadlineHour, start_hour: startHour,
+                    budget_max: budget, power_kw: power, answer: ''
+                };
             }
+
+            // ---------- 2. actuate (lights, purifier) ----------
+            const num = (t.match(/(\d+)/) || [])[1];
+            const pickLight = () => /\b(kitchen|cuisine)\b/.test(t)        ? 'KitchenLight'
+                                  : /\b(hallway|hall|couloir)\b/.test(t)    ? 'HallwayLight'
+                                  : /\b(purif|air\s*purif)\b/.test(t)       ? 'AirPurifier'
+                                                                            : 'LivingRoomLight';
+            if (/\b(turn\s+on|switch\s+on|allume|allumer)\b/.test(t) || /\bon\b/.test(t) && !chargeKw)
+                return { intent: 'actuate', target: pickLight(), value: true,  answer: '' };
+            if (/\b(turn\s+off|switch\s+off|eteint|eteins|eteindre|coupe)\b/.test(t) || /\boff\b/.test(t))
+                return { intent: 'actuate', target: pickLight(), value: false, answer: '' };
+
+            // ---------- 3. set_temperature ----------
+            if (/\b(temperature|degrees?|degre|chauff|set\s+(?:to\s+)?\d+)\b/.test(t) && num)
+                return { intent: 'set_temperature', target: null, value: parseInt(num, 10), answer: '' };
+
+            // ---------- 4. query_state ----------
+            if (/\b(status|state|temp|humidity|humidit|power|puissance|etat|air\s*quality|qualite)\b/.test(t))
+                return { intent: 'query_state', target: null, value: null, answer: '' };
+
+            // ---------- 5. price ----------
+            if (/(price|cost|tariff|prix|tarif|cout|combien)/.test(t)) {
+                if (/(cheapest|lowest|moins.cher|heures?.creuses?|best)/.test(t))
+                    return { intent: 'price_cheapest',  target: null, value: null, answer: '' };
+                if (/(most\s+expensive|highest|peak|plus.cher|pire)/.test(t))
+                    return { intent: 'price_expensive', target: null, value: null, answer: '' };
+                if (/(average|mean|moyen)/.test(t))
+                    return { intent: 'price_average',   target: null, value: null, answer: '' };
+                return { intent: 'price_current', target: null, value: null, answer: '' };
+            }
+
+            // ---------- 6. greeting / capabilities ----------
+            if (/\b(hello|hi|hey|good\s+(morning|evening|afternoon)|bonjour|salut|coucou)\b/.test(t))
+                return { intent: 'greeting', target: null, value: null, answer: '' };
+            if (/\b(what\s+can|help|capabilities|quoi|sais|peux|fais)\b/.test(t))
+                return { intent: 'capabilities', target: null, value: null, answer: '' };
 
             return { intent: 'unknown', target: null, value: null, answer: '' };
         }
@@ -344,43 +371,41 @@
             const { intent, target, value, answer } = nlu;
             switch (intent) {
                 case 'greeting':
-                    return addMessage(answer || "Bonjour ! Que puis-je faire pour vous ?");
+                    return addMessage(answer || "Hello! What can I do for you?");
                 case 'capabilities':
-                    return addMessage(answer || "Je peux allumer/éteindre vos lumières, le purificateur d'air, régler la température cible, et vous donner l'état des capteurs et le prix de l'énergie.");
+                    return addMessage(answer || "I can turn lights or the air purifier on/off, set the target temperature, give you sensor states and energy prices, and schedule an optimized car/heater charge for the cheapest hours.");
                 case 'smalltalk':
-                    return addMessage(answer || "Tout tourne, la boucle MAPE-K cycle parfaitement.");
+                    return addMessage(answer || "Everything's running — the MAPE-K loop is cycling smoothly.");
                 case 'out_of_scope':
-                    return addMessage(answer || "Désolé, je me limite à votre maison connectée et à l'énergie.");
+                    return addMessage(answer || "Sorry, I'm limited to your smart home and energy.");
                 case 'query_state': {
                     if (nlu.entity_id && haStates[nlu.entity_id]) {
                         const val = haStates[nlu.entity_id].state;
                         const attr = haStates[nlu.entity_id].attributes;
                         const unit = attr && attr.unit_of_measurement ? ` ${attr.unit_of_measurement}` : '';
-                        return addMessage((answer || `L'état est `) + `<b>${val}${unit}</b>.`);
+                        return addMessage((answer || `Current state: `) + `<b>${val}${unit}</b>.`);
                     }
-                    // Fallback to generic dashboard values if no entity_id was provided
                     const temp = haStates['sensor.showcase_living_room_temperature']?.state;
                     const pow  = haStates['sensor.showcase_estimated_power_draw']?.state;
                     const air  = haStates['sensor.showcase_air_quality_index']?.state;
                     const lights = [
-                        ['light.showcase_living_room_lamp', 'salon'],
-                        ['light.showcase_kitchen_light',    'cuisine'],
-                        ['light.showcase_hallway_light',    'couloir']
+                        ['light.showcase_living_room_lamp', 'living room'],
+                        ['light.showcase_kitchen_light',    'kitchen'],
+                        ['light.showcase_hallway_light',    'hallway']
                     ].map(([id, n]) => `${n}: <b>${haStates[id]?.state ?? '?'}</b>`).join(', ');
                     return addMessage(
-                        (answer ? answer + "<br>" : "") + 
-                        `État actuel :<br>` +
-                        `• Température salon : <b>${temp ?? '?'} °C</b><br>` +
-                        `• Puissance estimée : <b>${pow ?? '?'} W</b><br>` +
-                        `• Qualité air (AQI) : <b>${air ?? '?'}</b><br>` +
-                        `• Lumières : ${lights}`
+                        (answer ? answer + "<br>" : "") +
+                        `Current status:<br>` +
+                        `• Living-room temperature: <b>${temp ?? '?'} °C</b><br>` +
+                        `• Estimated power draw: <b>${pow ?? '?'} W</b><br>` +
+                        `• Air quality (AQI): <b>${air ?? '?'}</b><br>` +
+                        `• Lights: ${lights}`
                     );
                 }
                 case 'set_temperature':
-                case 'set_target_temp': {  // backward-compat with older NLU responses
-                    if (value == null) return addMessage("À quelle température ? (ex: 'mets 21 degrés')");
+                case 'set_target_temp': {
+                    if (value == null) return addMessage("What temperature? (e.g. 'set the temperature to 21 degrees')");
                     try {
-                        // Direct order: push the value to HA input_number immediately (slider bouge).
                         const r = await fetch(`${API}/api/actuate`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -390,16 +415,16 @@
                             })
                         });
                         if (r.ok) {
-                            addMessage((answer || `OK — température salon réglée à <b>${value}°C</b>`) + ` <span style="color:var(--text-muted)">(ordre direct via ruleless → HA)</span>`);
+                            addMessage((answer || `OK — living-room temperature set to <b>${value}°C</b>`) + ` <span style="color:var(--text-muted)">(direct order via ruleless → HA)</span>`);
                             refreshHaStates();
                         } else {
-                            addMessage(`Erreur côté SmartNode : ${await r.text()}`);
+                            addMessage(`SmartNode error: ${await r.text()}`);
                         }
-                    } catch (e) { addMessage("SmartNode injoignable."); }
+                    } catch (e) { addMessage("SmartNode unreachable."); }
                     return;
                 }
                 case 'actuate': {
-                    if (!target) return addMessage("Quelle entité dois-je piloter ? (salon, cuisine, couloir, purificateur)");
+                    if (!target) return addMessage("Which entity should I control? (living room, kitchen, hallway, purifier)");
                     const uri = `http://www.semanticweb.org/rayan/ontologies/2025/ha/${target}`;
                     const state = value ? 1 : 0;
                     try {
@@ -412,13 +437,13 @@
                             addMessage((answer || `OK — ${target} → ${value ? 'ON' : 'OFF'}`) + ` <span style="color:var(--text-muted)">(via ruleless → HA)</span>`);
                             refreshHaStates();
                         } else {
-                            addMessage(`Erreur côté SmartNode : ${await r.text()}`);
+                            addMessage(`SmartNode error: ${await r.text()}`);
                         }
-                    } catch (e) { addMessage("SmartNode injoignable."); }
+                    } catch (e) { addMessage("SmartNode unreachable."); }
                     return;
                 }
                 case 'call_service': {
-                    if (!nlu.domain || !nlu.service) return addMessage("Je ne sais pas exactement quelle action exécuter.");
+                    if (!nlu.domain || !nlu.service) return addMessage("I'm not sure which action to run.");
                     try {
                         const payloadData = nlu.data || {};
                         if (nlu.entity_id && !payloadData.entity_id) {
@@ -427,48 +452,49 @@
                         const r = await fetch(`${API}/api/call_service`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                domain: nlu.domain, 
-                                service: nlu.service, 
+                            body: JSON.stringify({
+                                domain: nlu.domain,
+                                service: nlu.service,
                                 data: payloadData
                             })
                         });
                         if (r.ok) {
-                            addMessage((answer || `OK — exécution de ${nlu.domain}.${nlu.service}`) + ` <span style="color:var(--text-muted)">(via dynamique → HA)</span>`);
-                            setTimeout(refreshHaStates, 1000); // refresh after a short delay
+                            addMessage((answer || `OK — running ${nlu.domain}.${nlu.service}`) + ` <span style="color:var(--text-muted)">(dynamic dispatch → HA)</span>`);
+                            setTimeout(refreshHaStates, 1000);
                         } else {
-                            addMessage(`Erreur d'exécution du service : ${await r.text()}`);
+                            addMessage(`Service call error: ${await r.text()}`);
                         }
-                    } catch (e) { addMessage("SmartNode injoignable."); }
+                    } catch (e) { addMessage("SmartNode unreachable."); }
                     return;
                 }
                 case 'price_current': {
                     if (!energyPrices.length) await refreshPrices();
-                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
-                    return addMessage(`Prix actuel : <b>${energyPrices[0].toFixed(2)} NOK/kWh</b>.`);
+                    if (!energyPrices.length) return addMessage("Prices unavailable.");
+                    return addMessage(`Current price: <b>${energyPrices[0].toFixed(2)} NOK/kWh</b>.`);
                 }
                 case 'price_cheapest': {
                     if (!energyPrices.length) await refreshPrices();
-                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
+                    if (!energyPrices.length) return addMessage("Prices unavailable.");
                     const m = Math.min(...energyPrices), i = energyPrices.indexOf(m);
-                    return addMessage(`Moins cher dans <b>${i}h</b> → <b>${m.toFixed(2)} NOK/kWh</b>.`);
+                    return addMessage(`Cheapest in <b>${i}h</b> → <b>${m.toFixed(2)} NOK/kWh</b>.`);
                 }
                 case 'price_expensive': {
                     if (!energyPrices.length) await refreshPrices();
-                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
+                    if (!energyPrices.length) return addMessage("Prices unavailable.");
                     const m = Math.max(...energyPrices), i = energyPrices.indexOf(m);
-                    return addMessage(`Plus cher dans <b>${i}h</b> → <b>${m.toFixed(2)} NOK/kWh</b>.`);
+                    return addMessage(`Most expensive in <b>${i}h</b> → <b>${m.toFixed(2)} NOK/kWh</b>.`);
                 }
                 case 'price_average': {
                     if (!energyPrices.length) await refreshPrices();
-                    if (!energyPrices.length) return addMessage("Prix indisponibles.");
+                    if (!energyPrices.length) return addMessage("Prices unavailable.");
                     const avg = energyPrices.reduce((a, b) => a + b, 0) / energyPrices.length;
-                    return addMessage(`Prix moyen 24h : <b>${avg.toFixed(2)} NOK/kWh</b>.`);
+                    return addMessage(`24h average price: <b>${avg.toFixed(2)} NOK/kWh</b>.`);
                 }
                 case 'optimize_schedule': {
                     const payload = {
                         duration_hours: nlu.duration_hours ?? 4,
                         deadline_hour: nlu.deadline_hour ?? 24,
+                        start_hour:    nlu.start_hour ?? null,
                         budget_max:    nlu.budget_max ?? null,
                         power_kw:      nlu.power_kw ?? 1,
                         target:        nlu.target ?? null
@@ -480,13 +506,13 @@
                             body: JSON.stringify(payload)
                         });
                         if (r.ok) addMessage(renderSchedule(await r.json(), answer));
-                        else      addMessage(`Erreur d'optimisation : ${await r.text()}`);
-                    } catch (e) { addMessage("SmartNode injoignable."); }
+                        else      addMessage(`Optimization error: ${await r.text()}`);
+                    } catch (e) { addMessage("SmartNode unreachable."); }
                     return;
                 }
 
                 default:
-                    return addMessage(answer || "Je n'ai pas bien compris. Essayez : <i>allume le salon</i>, <i>mets 21 degrés</i>, <i>quel est le prix ?</i>, <i>charge la voiture à 100% pour 7h</i>");
+                    return addMessage(answer || "I didn't quite get that. Try: <i>turn on the living room</i>, <i>set the temperature to 21 degrees</i>, <i>what's the energy price?</i>, <i>charge the Tesla to 100% by 7am</i>");
             }
         }
 
@@ -503,18 +529,20 @@
                      + `style="flex:1;height:28px;background:${color};border-right:1px solid rgba(0,0,0,0.3);"></div>`;
             }).join('');
 
-            const targetLabel = plan.target ? ` pour <b>${plan.target}</b>` : '';
-            const header = answer || `Plan optimisé${targetLabel} (${plan.duration_hours}h avant ${plan.deadline_hour}h) :`;
+            const targetLabel = plan.target ? ` for <b>${plan.target}</b>` : '';
+            const windowLabel = (plan.start_hour != null && plan.start_hour > 0)
+                ? `${plan.duration_hours}h between ${plan.start_hour}:00 and ${plan.deadline_hour}:00`
+                : `${plan.duration_hours}h before ${plan.deadline_hour}:00`;
+            const header = answer || `Optimized plan${targetLabel} (${windowLabel}):`;
             const budgetLine = plan.budget_max != null
-                ? `<br>Budget ${plan.budget_max} NOK : ${plan.within_budget ? '<b style="color:#22c55e">✓ respecté</b>' : '<b style="color:#ef4444">✗ dépassé</b>'}`
+                ? `<br>Budget ${plan.budget_max} NOK: ${plan.within_budget ? '<b style="color:#22c55e">✓ respected</b>' : '<b style="color:#ef4444">✗ exceeded</b>'}`
                 : '';
 
-            // Only show Execute button if we have a concrete actuator to drive.
             const planId = 'plan-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
             _pendingPlans.set(planId, plan);
             const execBtn = plan.target
-                ? `<br><button class="exec-btn" data-exec-plan="${planId}">▶ Exécuter le plan (mode démo : 1h = 1min)</button>`
-                : `<br><span style="color:var(--text-muted);font-size:0.75rem">(Précise une cible — ex. "charge la voiture..." — pour pouvoir exécuter)</span>`;
+                ? `<br><button class="exec-btn" data-exec-plan="${planId}">▶ Run plan (demo mode: 1h = 1min)</button>`
+                : `<br><span style="color:var(--text-muted);font-size:0.75rem">(Specify a target — e.g. "charge the Tesla..." — to enable execution)</span>`;
 
             return `${header}
                 <div style="display:flex;margin:8px 0 4px;border-radius:6px;overflow:hidden;">${cells}</div>
@@ -522,10 +550,10 @@
                     <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span>
                 </div>
                 <div style="margin-top:8px;font-size:0.85rem;line-height:1.5;">
-                    Heures choisies : <b>${plan.chosen_hours.map(h => h + 'h').join(', ')}</b><br>
-                    Durée ${plan.duration_hours}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} NOK</b>
-                    <span style="color:var(--text-muted)">(moy. ${plan.avg_price_chosen}, baseline ${plan.avg_price})</span><br>
-                    <b style="color:#22c55e">Économie : ${plan.savings_percent}%</b> vs charge constante${budgetLine}
+                    Chosen hours: <b>${plan.chosen_hours.map(h => h + 'h').join(', ')}</b><br>
+                    Duration ${plan.duration_hours}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} NOK</b>
+                    <span style="color:var(--text-muted)">(avg ${plan.avg_price_chosen}, baseline ${plan.avg_price})</span><br>
+                    <b style="color:#22c55e">Savings: ${plan.savings_percent}%</b> vs constant charge${budgetLine}
                     ${execBtn}
                 </div>`;
         }
@@ -548,12 +576,12 @@
                 });
                 if (r.ok) {
                     const res = await r.json();
-                    addMessage(`▶ Planning lancé (id <b>${res.schedule_id}</b>, ${demoMode ? 'mode démo : 1h = 1min' : 'temps réel'}). Suivi dans le bandeau en haut.`);
+                    addMessage(`▶ Schedule started (id <b>${res.schedule_id}</b>, ${demoMode ? 'demo mode: 1h = 1min' : 'real time'}). Track it in the banner above.`);
                     refreshSchedules();
                 } else {
-                    addMessage(`Erreur exécution : ${await r.text()}`);
+                    addMessage(`Execution error: ${await r.text()}`);
                 }
-            } catch (e) { addMessage("SmartNode injoignable."); }
+            } catch (e) { addMessage("SmartNode unreachable."); }
         }
 
         async function refreshSchedules() {
@@ -564,7 +592,7 @@
                 const panel = document.getElementById('schedules-panel');
                 if (!schedules.length) { panel.classList.remove('visible'); panel.innerHTML = ''; return; }
                 panel.classList.add('visible');
-                panel.innerHTML = '<b style="font-size:0.72rem;color:var(--text-muted);letter-spacing:0.05em;">⏱ PLANNINGS</b>'
+                panel.innerHTML = '<b style="font-size:0.72rem;color:var(--text-muted);letter-spacing:0.05em;">⏱ SCHEDULES</b>'
                     + schedules.slice(0, 4).map(s => {
                         const elapsed = Math.floor((Date.now() - new Date(s.started_at).getTime()) / 1000);
                         const totalSec = 24 * s.time_unit_seconds;
@@ -592,7 +620,7 @@
             } catch (e) {
                 hideTyping();
                 console.error(e);
-                addMessage(`Erreur interne: ${e.message}`);
+                addMessage(`Internal error: ${e.message}`);
             }
         }
 
@@ -621,9 +649,9 @@
             const execTarget = e.target.closest('[data-exec-plan]');
             if (execTarget) {
                 execTarget.disabled = true;
-                execTarget.textContent = 'Lancement…';
+                execTarget.textContent = 'Launching…';
                 await executePlan(execTarget.dataset.execPlan, true);
-                execTarget.textContent = '✓ Lancé';
+                execTarget.textContent = '✓ Launched';
                 return;
             }
             const cancelTarget = e.target.closest('[data-cancel-id]');
