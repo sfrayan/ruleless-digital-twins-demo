@@ -3,16 +3,18 @@
 > Procédure copy-paste-ready pour lancer la démo `ruleless-digital-twins` de zéro sur Windows 11. Toutes les commandes sont en **PowerShell**.
 >
 > **Cible** : démo en moins de 5 minutes, à froid, sans toucher au code.
-> **Voisins du repo** : `[ROADMAP.md](ROADMAP.md)` (vision plus large) · `[readme.md](readme.md)` (concepts).
+> **Voisins du repo** : `[ROADMAP.md](ROADMAP.md)` (vision plus large) · `[README.md](README.md)` (concepts).
 
 ---
 
 ## Sommaire
 - [1. Prérequis](#1-prérequis)
+- [1bis. Bootstrap (clone propre)](#1bis-bootstrap-clone-propre)
 - [2. Lancement séquentiel](#2-lancement-séquentiel)
 - [3. Vérifications lecture seule](#3-vérifications-lecture-seule)
 - [4. Récupération en cas de panne](#4-récupération-en-cas-de-panne)
 - [5. Arrêt propre](#5-arrêt-propre)
+- [6. Export Home Assistant → TTL (tools/hass-to-rdt)](#6-export-home-assistant--ttl-toolshass-to-rdt)
 
 ---
 
@@ -52,7 +54,46 @@ Si `False`, voir [4.5 — recréer le conteneur ha-instance](#45-recréer-le-con
 
 ---
 
+## 1bis. Bootstrap (clone propre)
+
+> À exécuter **une seule fois** sur une machine neuve, ou après un `git clone` frais. Skip si tu as déjà un workspace fonctionnel.
+
+### 1bis.1 — Submodules
+
+Trois sous-modules sont déclarés dans `.gitmodules` (Femyou, Nordpool-FMU, PythonFMU) et **doivent** être tirés sinon SmartNode ne compilera pas :
+
+```powershell
+cd C:\dev\ruleless-digital-twins
+git submodule update --init --recursive
+```
+
+### 1bis.2 — Démarrer la stack démo via Docker Compose
+
+Le compose dédié `services/docker-compose.demo.yml` lance Home Assistant + MongoDB. RabbitMQ et Ollama y sont **commentés** (cf. notes dans le fichier — décommente seulement si tu démontres l'env `incubator` ou veux Ollama containerisé) :
+
+```powershell
+docker compose -f services/docker-compose.demo.yml up -d
+docker compose -f services/docker-compose.demo.yml ps
+# ha-instance et rdt-mongodb doivent être Up
+```
+
+Variables d'environnement utiles (à placer dans le shell ou un `.env` local) :
+
+```powershell
+$env:HA_CONFIG_DIR = "C:\ha-showcase-config"      # bind-mount HA (default)
+$env:TZ            = "Europe/Oslo"                 # timezone HA
+$env:TOKEN_HA      = "<long_lived_token>"          # requis pour SmartNode
+$env:HA_URL        = "http://localhost:8123/api/"  # utilisé par hacvt_rdt
+$env:RDT_NAMESPACE = "http://www.semanticweb.org/rayan/ontologies/2025/ha/"
+```
+
+> Ollama : si tu utilises l'instance Ollama du host (par défaut), ne décommente PAS le service `ollama` dans le compose — conflit sur le port 11434.
+
+---
+
 ## 2. Lancement séquentiel
+
+> Variante manuelle (équivalente au bootstrap §1bis.2 si tu préfères piloter chaque conteneur). Si tu as déjà fait `docker compose up -d`, saute à 2.2.
 
 ### 2.1 — Démarrer les conteneurs
 ```powershell
@@ -121,10 +162,10 @@ Dans une autre fenêtre PowerShell :
 start C:\dev\ruleless-digital-twins\SmartNode\SmartNode\index.html
 ```
 
-Vérifications visuelles dans le navigateur :
-- En-tête : pastille **verte** + texte `SmartNode + HA connectés`
-- Dashboard : Température / Puissance / Qualité air affichent des valeurs (pas `—`)
-- Quick-chips visibles (Allume salon, Éteins cuisine, 22°C, État maison, Prix, Charge Tesla nuit)
+Vérifications visuelles dans le navigateur (interface 100% anglaise depuis avril 2026) :
+- En-tête : pastille **verte** + texte `SmartNode + HA connected`
+- Dashboard : Temperature / Power / Air quality affichent des valeurs (pas `—`)
+- Section `QUICK ACTIONS` avec 6 chips : *Turn on living room*, *Turn off kitchen*, *Set 22°C*, *House status*, *Energy price*, *Charge Tesla overnight*
 
 Si la pastille reste rouge → vérifie le terminal `dotnet run` (logs d'erreur) et [3](#3-vérifications-lecture-seule).
 
@@ -408,10 +449,71 @@ docker stop jarvis-ollama
 
 Pour relancer plus tard, reprendre directement à [section 2](#2-lancement-séquentiel).
 
+Si tu as démarré la stack via `docker compose up -d`, l'arrêt symétrique est :
+```powershell
+docker compose -f services/docker-compose.demo.yml down
+```
+
+---
+
+## 6. Export Home Assistant → TTL (`tools/hass-to-rdt`)
+
+> Génère/régénère `models-and-rules/homeassistant-instance.ttl` à partir de l'état courant de HA. À faire à chaque fois que tu ajoutes/renommes des entités HA. **Sans cet export à jour, le moteur d'inférence travaille sur un modèle obsolète.**
+
+### 6.1 — Setup unique du venv
+
+```powershell
+cd C:\dev\ruleless-digital-twins\tools\hass-to-rdt
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements-cli.txt
+```
+
+L'installation pull `homeassistant` (~10 min la première fois — c'est normal, il pull tout l'écosystème HA).
+
+### 6.2 — Lancement de l'export
+
+Variables nécessaires (déjà couvertes en §1bis.2) :
+
+```powershell
+$env:TOKEN_HA      # token long-lived HA
+$env:HA_URL        = "http://localhost:8123/api/"
+$env:RDT_NAMESPACE = "http://www.semanticweb.org/rayan/ontologies/2025/ha/"
+```
+
+> ⚠️ Le second argument `TOKEN_HA` est le **nom** de la variable, pas la valeur du token. C'est `hacvt_rdt.py` qui ira lire l'env var.
+
+```powershell
+cd C:\dev\ruleless-digital-twins\tools\hass-to-rdt
+.venv\Scripts\Activate.ps1
+python hacvt_rdt.py $env:HA_URL TOKEN_HA `
+    --namespace $env:RDT_NAMESPACE `
+    --out ..\..\models-and-rules\homeassistant-instance.ttl
+```
+
+Sortie attendue : un `.ttl` à jour avec toutes les entités HA mappées sur SOSA/SSN + `rdt:hasIdentifier`. Le prochain cycle MAPE-K (le SmartNode reload le modèle à chaque cycle) prendra automatiquement la nouvelle version.
+
+### 6.3 — Vérification rapide
+
+```powershell
+Get-Content ..\..\models-and-rules\homeassistant-instance.ttl | Select-String "rdt:hasIdentifier" | Measure-Object
+# nombre attendu = nombre d'entités HA exposées
+```
+
 ---
 
 ## Récap visuel — séquence minimale qui marche
 
+Variante compose (clone propre) :
+```
+git submodule update --init --recursive
+docker compose -f services/docker-compose.demo.yml up -d
+$env:TOKEN_HA = "<token>"
+cd SmartNode\SmartNode && dotnet run
+start .\index.html
+```
+
+Variante manuelle (containers déjà créés) :
 ```
 docker start ha-instance
 docker start jarvis-ollama
