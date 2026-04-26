@@ -502,28 +502,37 @@
                         power_kw:      nlu.power_kw ?? 1,
                         target:        nlu.target ?? null
                     };
+                    let plan = null;
                     try {
                         const r = await fetch(`${API}/api/optimize`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        if (r.ok) {
-                            const plan = await r.json();
-                            if (plan.forecastAvailable === false || plan.optimized === false) {
-                                const reason = plan.reason || 'Future Nord Pool price forecast unavailable.';
-                                addMessage(
-                                    `<b>Cannot optimize cheapest hours.</b><br>` +
-                                    `${reason}<br>` +
-                                    `<span style="color:var(--text-muted);font-size:0.8rem">Source: ${plan.priceSource || 'homeassistant:nordpool.get_prices_for_date'}</span>`
-                                );
-                            } else {
-                                addMessage(renderSchedule(plan, answer));
-                            }
-                        } else {
-                            addMessage(`Optimization error: ${await r.text()}`);
+                        if (!r.ok) {
+                            addMessage(`Optimization error (HTTP ${r.status}): ${await r.text()}`);
+                            return;
                         }
-                    } catch (e) { addMessage("SmartNode unreachable."); }
+                        plan = await r.json();
+                    } catch (e) {
+                        addMessage(`SmartNode unreachable (fetch failed): ${e && e.message ? e.message : e}`);
+                        return;
+                    }
+                    try {
+                        if (plan.forecastAvailable === false || plan.optimized === false) {
+                            const reason = plan.reason || 'Future Nord Pool price forecast unavailable.';
+                            addMessage(
+                                `<b>Cannot optimize cheapest hours.</b><br>` +
+                                `${reason}<br>` +
+                                `<span style="color:var(--text-muted);font-size:0.8rem">Source: ${plan.priceSource || 'homeassistant:nordpool.get_prices_for_date'}</span>`
+                            );
+                        } else {
+                            addMessage(renderSchedule(plan, answer));
+                        }
+                    } catch (e) {
+                        console.error('renderSchedule failed', e, plan);
+                        addMessage(`Render error: ${e && e.message ? e.message : e} (see browser console for details)`);
+                    }
                     return;
                 }
 
