@@ -1,6 +1,7 @@
 ﻿using Logic.CaseRepository;
 using Logic.FactoryInterface;
 using Logic.Mapek.Comparers;
+using Logic.Mapek.Proactive;
 using Logic.Models.DatabaseModels;
 using Logic.Models.MapekModels;
 using Logic.Models.OntologicalModels;
@@ -26,6 +27,8 @@ namespace Logic.Mapek {
         private readonly IMapekKnowledge _mapekKnowledge;
         private readonly ICaseRepository _caseRepository;
         private readonly IBangBangPlanner _bangBangPlanner;
+        // Proactive arm: optional, V1 is consultative (logs + REST); never required for the loop to function.
+        private readonly IProactiveAdvisor? _proactiveAdvisor;
 
         private bool _isLoopActive = false;
         private bool _bufferedDecisionUsed = false;
@@ -41,6 +44,8 @@ namespace Logic.Mapek {
             _mapekKnowledge = serviceProvider.GetRequiredService<IMapekKnowledge>();
             _caseRepository = serviceProvider.GetRequiredService<ICaseRepository>();
             _bangBangPlanner = serviceProvider.GetRequiredService<IBangBangPlanner>();
+            // Resolve as optional so the existing TestProject / non-SmartNode hosts that don't register it keep working.
+            _proactiveAdvisor = serviceProvider.GetService<IProactiveAdvisor>();
         }
 
         public async Task StartLoop() {
@@ -77,6 +82,13 @@ namespace Logic.Mapek {
 
                     // Monitor - Observe all hard and soft Sensor values, construct soft Sensor trees, and collect OptimalConditions.
                     var cache = await _mapekMonitor.Monitor(currentMapekCycle);
+
+                    // Proactive arm — refresh the price-trend advisory before planning. V1 is consultative:
+                    // the result is exposed via /api/proactive/status and logged here, but does not influence
+                    // the planner. Failures (HA down, no Nord Pool config_entry) are swallowed by the advisor.
+                    if (_proactiveAdvisor is not null) {
+                        await _proactiveAdvisor.RefreshAsync();
+                    }
 
                     // Use the right planning method (and functionality) based on configuration.
                     // TODO: Consider using the strategy pattern here. How do we make the Manager agnostic to the type of planner it should use? We should probably not have multi-cycle

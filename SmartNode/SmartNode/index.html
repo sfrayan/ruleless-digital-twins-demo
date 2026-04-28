@@ -50,6 +50,12 @@
         .chat-header .subtitle .dot-status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; background: #64748b; vertical-align: middle; }
         .chat-header .subtitle .dot-status.ok { background: #22c55e; }
         .chat-header .subtitle .dot-status.ko { background: #ef4444; }
+        .proactive-badge { margin: 8px 16px 0; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; line-height: 1.4; display: flex; align-items: center; gap: 8px; }
+        .proactive-badge.preheat { background: rgba(34, 197, 94, 0.15); color: #166534; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .proactive-badge.defer   { background: rgba(239, 68, 68, 0.15); color: #991b1b; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .proactive-badge .icon { font-size: 1.1rem; }
+        .proactive-badge .preheat-btn { margin-left: auto; padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; background: #16a34a; color: white; font-size: 0.8rem; }
+        .proactive-badge .preheat-btn:hover { background: #15803d; }
         .dashboard {
             padding: 12px 16px; border-bottom: 1px solid var(--glass-border);
             background: rgba(0,0,0,0.15);
@@ -154,6 +160,8 @@
             <div class="dash-card"><div class="label">Air quality</div><div class="value" id="dash-air">—</div></div>
         </div>
 
+        <div class="proactive-badge" id="proactive-badge" style="display:none"></div>
+
         <div class="schedules-panel" id="schedules-panel"></div>
 
         <div class="chat-messages" id="chat-messages">
@@ -234,6 +242,57 @@
         refreshPrices();
         refreshHaStates();
         setInterval(refreshHaStates, 5000);
+
+        // Proactive arm: polls the read-only advisory MAPE-K computes from Nord Pool prices.
+        // Hidden when the advisor has nothing to recommend (median price, forecast unavailable, or
+        // MAPE-K hasn't run a cycle yet → 204). The "Preheat now" shortcut bumps the living-room
+        // setpoint by 1°C via the same /api/temperature endpoint the chat uses.
+        const proactiveBadge = document.getElementById('proactive-badge');
+        async function refreshProactive() {
+            try {
+                const r = await fetch(`${API}/api/proactive/status`);
+                if (r.status === 204) { proactiveBadge.style.display = 'none'; return; }
+                if (!r.ok) { proactiveBadge.style.display = 'none'; return; }
+                const a = await r.json();
+                if (!a.forecastAvailable || (!a.shouldPreheat && !a.shouldDeferLoad)) {
+                    proactiveBadge.style.display = 'none';
+                    return;
+                }
+                const cls = a.shouldPreheat ? 'preheat' : 'defer';
+                const icon = a.shouldPreheat ? '🔥' : '⏸️';
+                const btn = a.shouldPreheat
+                    ? `<button class="preheat-btn" id="preheat-now-btn">Preheat now (+1°C)</button>`
+                    : '';
+                proactiveBadge.className = `proactive-badge ${cls}`;
+                proactiveBadge.innerHTML = `<span class="icon">${icon}</span><span>${a.reason}</span>${btn}`;
+                proactiveBadge.style.display = 'flex';
+                const btnEl = document.getElementById('preheat-now-btn');
+                if (btnEl) btnEl.onclick = preheatNow;
+            } catch (e) {
+                proactiveBadge.style.display = 'none';
+            }
+        }
+        async function preheatNow() {
+            const tempEl = document.getElementById('dash-temp');
+            const current = tempEl ? parseFloat(tempEl.textContent) : NaN;
+            const target = isFinite(current) ? Math.round(current) + 1 : 22;
+            try {
+                const r = await fetch(`${API}/api/actuate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        uri: 'http://www.semanticweb.org/rayan/ontologies/2025/ha/LivingRoomTemperatureInput',
+                        state: target
+                    })
+                });
+                if (r.ok) addMessage(`🔥 Proactive preheat: living-room setpoint → <b>${target}°C</b> (cheap window now, peak coming).`);
+                else addMessage(`Preheat failed: ${await r.text()}`);
+            } catch (e) {
+                addMessage('Preheat failed: SmartNode unreachable.');
+            }
+        }
+        refreshProactive();
+        setInterval(refreshProactive, 30000);
 
         function addMessage(text, isUser = false) {
             const msgDiv = document.createElement('div');
@@ -544,19 +603,38 @@
         // Map plan id -> plan for the Execute button.
         const _pendingPlans = new Map();
 
-        // Render a 24h schedule visualization: coloured hour cells + cost/savings summary.
+        // Render a 24h schedule visualization: bar heights scale with hourly price so the
+        // expensive vs cheap hours are visible at a glance. Tooltips show price + chosen flag.
         function renderSchedule(plan, answer) {
+            const currencyForBars = plan.currency || 'NOK';
+            const pricesOnly = plan.schedule.map(s => s.price).filter(p => p != null);
+            const maxPrice = pricesOnly.length ? Math.max(...pricesOnly) : 1;
+            const minPrice = pricesOnly.length ? Math.min(...pricesOnly) : 0;
+            const containerH = 64; // px — total bar area height
+            const minBarH = 6;     // px — even cheapest bar stays visible
+            // Floor the scaling at minPrice so the cheapest hour gets ~minBarH and the most
+            // expensive gets ~containerH. With flat days (small spread) this keeps the bars
+            // proportional rather than all squashed at the bottom.
             const cells = plan.schedule.map(s => {
                 const noData = (s.price == null);
                 const color = noData ? 'rgba(100,116,139,0.15)'              // no forecast for this hour
                             : s.on ? '#22c55e'                                // green: chosen (ON)
                             : !s.before_deadline ? '#334155'                  // dark: after deadline
-                            : (s.price > plan.avg_price ? 'rgba(239,68,68,0.45)' : 'rgba(148,163,184,0.25)');
+                            : (s.price > plan.avg_price ? 'rgba(239,68,68,0.55)' : 'rgba(148,163,184,0.35)');
+                let barH;
+                if (noData) {
+                    barH = 4;
+                } else if (maxPrice === minPrice) {
+                    barH = Math.round(containerH * 0.6);
+                } else {
+                    const ratio = (s.price - minPrice) / (maxPrice - minPrice); // 0..1
+                    barH = Math.max(minBarH, Math.round(minBarH + ratio * (containerH - minBarH)));
+                }
                 const tip = noData
                     ? `h${s.hour}: no future price`
-                    : `h${s.hour}: ${s.price.toFixed(2)} ${plan.currency || 'NOK'}/kWh${s.on ? ' ✓' : ''}`;
+                    : `h${s.hour}: ${s.price.toFixed(3)} ${currencyForBars}/kWh${s.on ? ' ✓ chosen' : (s.before_deadline ? '' : ' (after deadline)')}`;
                 return `<div title="${tip}" `
-                     + `style="flex:1;height:28px;background:${color};border-right:1px solid rgba(0,0,0,0.3);"></div>`;
+                     + `style="flex:1;height:${barH}px;background:${color};border-right:1px solid rgba(0,0,0,0.3);"></div>`;
             }).join('');
 
             const targetLabel = plan.target ? ` for <b>${plan.target}</b>` : '';
@@ -590,19 +668,32 @@
                   }).join('<br>')
                 : '';
 
-            const baselineNote = (plan.baseline_cost_nok != null)
-                ? ` (baseline ${plan.baseline_cost_nok} ${currency})`
+            // Two baselines exposed by the backend:
+            //   baseline_cost_nok        = window-average cost (conservative — "didn't optimize within window")
+            //   baseline_worst_cost_nok  = N most-expensive hours in window (upper bound — "worst valid plan")
+            // We surface both so the demo isn't bottlenecked by flat-price days, where window-avg savings
+            // can be ~1% even though the chosen plan is genuinely the cheapest possible.
+            const baselineParts = [];
+            if (plan.baseline_cost_nok != null) baselineParts.push(`window-avg ${plan.baseline_cost_nok} ${currency}`);
+            if (plan.baseline_worst_cost_nok != null) baselineParts.push(`peak-hours ${plan.baseline_worst_cost_nok} ${currency}`);
+            const baselineNote = baselineParts.length ? ` (baseline: ${baselineParts.join(', ')})` : '';
+
+            const worstSavingsLine = (plan.baseline_worst_savings_percent != null)
+                ? ` &nbsp;•&nbsp; up to <b style="color:#22c55e">${plan.baseline_worst_savings_percent}%</b> vs charging at peak hours`
                 : '';
 
             return `${header}
-                <div style="display:flex;margin:8px 0 4px;border-radius:6px;overflow:hidden;">${cells}</div>
+                <div style="display:flex;align-items:flex-end;margin:8px 0 4px;height:${containerH}px;border-radius:6px;overflow:hidden;background:rgba(15,23,42,0.06);">${cells}</div>
                 <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);">
                     <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span>
+                </div>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">
+                    Bar height ∝ price (range ${minPrice.toFixed(2)}–${maxPrice.toFixed(2)} ${currencyForBars}/kWh). Hover for exact values.
                 </div>
                 <div style="margin-top:8px;font-size:0.85rem;line-height:1.5;">
                     Chosen hours: <b>${plan.chosen_hours.map(h => h + 'h').join(', ')}</b>${slotLines}<br>
                     ${actualH}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} ${currency}</b>${baselineNote}<br>
-                    <b style="color:#22c55e">Savings: ${plan.savings_percent}%</b> vs constant charge${budgetLine}
+                    <b style="color:#22c55e">Savings: ${plan.savings_percent}%</b> vs window-avg charge${worstSavingsLine}${budgetLine}
                     ${execBtn}
                 </div>`;
         }

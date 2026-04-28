@@ -1,6 +1,7 @@
 using Logic.CaseRepository;
 using Logic.FactoryInterface;
 using Logic.Mapek;
+using Logic.Mapek.Proactive;
 using Logic.Models.DatabaseModels;
 using Logic.Models.MapekModels;
 using Microsoft.Extensions.Configuration;
@@ -113,6 +114,10 @@ namespace SmartNode
             builder.Services.AddSingleton<IMapekKnowledge, MapekKnowledge>(serviceProvider => new MapekKnowledge(serviceProvider));
             builder.Services.AddSingleton<IMapekManager, MapekManager>(serviceprovider => new MapekManager(serviceprovider));
             builder.Services.AddSingleton<HomeAssistantRegistry>();
+            // Proactive arm (V1, consultative): MAPE-K reads the Nord Pool forecast each cycle
+            // and exposes a peak/cheap-window advisory. The advisor never mutates planning state.
+            builder.Services.AddSingleton<IPriceForecastProvider, NordPoolPriceForecastAdapter>();
+            builder.Services.AddSingleton<IProactiveAdvisor, ProactiveAdvisor>();
 
             using var host = builder.Build();
 
@@ -694,10 +699,23 @@ Rules:
                                 double actualDurationHours = needed; // 1h per bucket
                                 double totalCost   = chosenBuckets.Sum(b => b.AvgPrice * powerKw); // ×1h
                                 double avgWindow   = hourBuckets.Average(b => b.AvgPrice);
-                                // Baseline: same energy as requested, charged at the window-average hourly price.
+                                // Window-average baseline: charging the same energy at the window's mean hourly price.
+                                // Conservative — represents "you didn't optimize within the deadline window".
                                 double baselineCost = avgWindow * powerKw * requestedDurationHours;
                                 double savingsPct  = baselineCost > 0 ? (1 - totalCost / baselineCost) * 100 : 0;
                                 double avgChosen   = chosenBuckets.Average(b => b.AvgPrice);
+
+                                // Worst-N baseline: same energy charged at the N most expensive hours available
+                                // within the deadline window. This is the upper bound of achievable savings —
+                                // i.e. "the worst plan you could have picked under the same constraint".
+                                var worstBuckets = hourBuckets
+                                    .OrderByDescending(b => b.AvgPrice)
+                                    .ThenBy(b => b.Start)
+                                    .Take(needed)
+                                    .ToList();
+                                double worstAvgPrice = worstBuckets.Count > 0 ? worstBuckets.Average(b => b.AvgPrice) : avgWindow;
+                                double worstCost = worstAvgPrice * powerKw * requestedDurationHours;
+                                double worstSavingsPct = worstCost > 0 ? (1 - totalCost / worstCost) * 100 : 0;
 
                                 var chosenStarts = new HashSet<DateTimeOffset>(chosenBuckets.Select(b => b.Start));
 
@@ -754,6 +772,9 @@ Rules:
                                     power_kw = powerKw,
                                     total_cost_nok = Math.Round(totalCost, 2),
                                     baseline_cost_nok = Math.Round(baselineCost, 2),
+                                    baseline_worst_cost_nok = Math.Round(worstCost, 2),
+                                    baseline_worst_avg_price = Math.Round(worstAvgPrice, 4),
+                                    baseline_worst_savings_percent = (int)Math.Round(worstSavingsPct),
                                     avg_price = Math.Round(avgWindow, 4),
                                     avg_price_chosen = Math.Round(avgChosen, 4),
                                     savings_percent = (int)Math.Round(savingsPct),
@@ -767,6 +788,41 @@ Rules:
                                 context.Response.ContentType = "application/json";
                                 context.Response.OutputStream.Write(bytes, 0, bytes.Length);
                                 logger.LogInformation($"[CHATBOX] Optimize: target={target}, requested={requestedDurationHours:F2}h actual={actualDurationHours:F2}h ({chosenBuckets.Count} hourly buckets) in [{windowStart:HH:mm}..{deadlineCandidate:HH:mm}), cost={totalCost:F2} {forecast.Currency} ({savingsPct:F0}% saved)");
+                            } catch (Exception ex) {
+                                context.Response.StatusCode = 500;
+                                var bytes = System.Text.Encoding.UTF8.GetBytes(ex.Message);
+                                context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                            }
+                        } else if (context.Request.Url!.AbsolutePath == "/api/proactive/status" && context.Request.HttpMethod == "GET") {
+                            // Read-only view of the proactive arm: returns the latest advisory computed
+                            // by MAPE-K (cheap/peak window detection from the Nord Pool forecast).
+                            // Returns 204 if MAPE-K hasn't produced an advisory yet.
+                            try {
+                                var advisor = host.Services.GetRequiredService<IProactiveAdvisor>();
+                                var latest = advisor.Latest;
+                                if (latest is null) {
+                                    context.Response.StatusCode = 204;
+                                } else {
+                                    var json = System.Text.Json.JsonSerializer.Serialize(new {
+                                        forecastAvailable = latest.ForecastAvailable,
+                                        warning = latest.Warning,
+                                        generatedAt = latest.GeneratedAt.ToString("o"),
+                                        currency = latest.Currency,
+                                        area = latest.Area,
+                                        currentPrice = latest.CurrentPrice,
+                                        q1 = latest.Q1,
+                                        q3 = latest.Q3,
+                                        nextPeakStart = latest.NextPeakStart?.ToString("o"),
+                                        nextPeakPrice = latest.NextPeakPrice,
+                                        hoursUntilNextPeak = latest.HoursUntilNextPeak,
+                                        shouldPreheat = latest.ShouldPreheat,
+                                        shouldDeferLoad = latest.ShouldDeferLoad,
+                                        reason = latest.Reason
+                                    });
+                                    var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+                                    context.Response.ContentType = "application/json";
+                                    context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                                }
                             } catch (Exception ex) {
                                 context.Response.StatusCode = 500;
                                 var bytes = System.Text.Encoding.UTF8.GetBytes(ex.Message);
