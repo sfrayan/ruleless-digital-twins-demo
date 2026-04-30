@@ -38,7 +38,10 @@ namespace SmartNode
             string? settingsFile = parseResult.GetValue(fileNameArg);
             string? baseDir = parseResult.GetValue(baseDirName);
 
-            var appSettings = settingsFile is not null ? Path.Combine("Properties", settingsFile) : Path.Combine("Properties", $"appsettings.json");
+            // Resolve appsettings.json relative to the assembly so `dotnet run --project ...`
+            // works from any working directory.
+            var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+            var appSettings = Path.Combine(assemblyDir, "Properties", settingsFile ?? "appsettings.json");
 
             var builder = Host.CreateApplicationBuilder(args);
             builder.Configuration.AddJsonFile(appSettings);
@@ -673,11 +676,13 @@ Rules:
                                     .OrderBy(b => b.Start)
                                     .ToList();
 
+                                var cheapest3 = string.Join(", ",
+                                    hourBuckets.OrderBy(b => b.AvgPrice).Take(3)
+                                        .Select(b => $"{b.Start:HH:mm}@{b.AvgPrice:F4}"));
                                 logger.LogInformation(
-                                    "[OPTIMIZE] forecast.Slots={fs} allBuckets={ab} hourBuckets={hb} windowStart={ws:o} deadlineCandidate={dc:o} | first3slots={slots}",
+                                    "[OPTIMIZE] rawSlots={fs} hourlyBuckets={ab} windowBuckets={hb} windowStart={ws:HH:mm} deadline={dc:HH:mm} | cheapest3={c}",
                                     forecast.Slots.Count, allBuckets.Count, hourBuckets.Count,
-                                    windowStart, deadlineCandidate,
-                                    string.Join(", ", forecast.Slots.Take(3).Select(s => $"{s.Start:HH:mm}→{s.End:HH:mm}@{s.Price:F4}")));
+                                    windowStart, deadlineCandidate, cheapest3);
 
                                 if (hourBuckets.Count == 0) {
                                     var emptyJson = System.Text.Json.JsonSerializer.Serialize(new {

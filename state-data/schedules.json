@@ -43,6 +43,22 @@
     ],
     "TimeUnitSeconds": 60,
     "StartedAt": "2026-04-28T13:28:38.6586998Z",
+    "Status": "interrupted",
+    "CurrentHour": -1,
+    "LastError": null
+  },
+  {
+    "Id": "e0568b7e",
+    "TargetUri": "http://www.semanticweb.org/rayan/ontologies/2025/ha/CarCharger",
+    "TargetName": "CarCharger",
+    "OnHours": [
+      4,
+      5,
+      17,
+      18
+    ],
+    "TimeUnitSeconds": 60,
+    "StartedAt": "2026-04-30T14:19:45.3513565Z",
     "Status": "running",
     "CurrentHour": -1,
     "LastError": null

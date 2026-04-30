@@ -153,13 +153,15 @@ internal static class NordPoolForecastProvider
         await TryFetchDay(http, entryId, area, todayStr, tz, slots, logger, ct);
         await TryFetchDay(http, entryId, area, tomorrowStr, tz, slots, logger, ct);
 
-        // Keep only future slots, deduplicated and ordered.
+        // Keep only future slots within the horizon window. `horizon` is in HOURS,
+        // not slot count — Nord Pool can return 15-min sub-hourly slots (96/day),
+        // so a count-based Take(24) would only cover ~6 hours.
+        var horizonEnd = nowLocal.AddHours(horizon);
         var futureSlots = slots
-            .Where(s => s.End > nowLocal)
+            .Where(s => s.End > nowLocal && s.Start < horizonEnd)
             .GroupBy(s => s.Start)
             .Select(g => g.First())
             .OrderBy(s => s.Start)
-            .Take(horizon)
             .ToList();
 
         if (futureSlots.Count == 0)

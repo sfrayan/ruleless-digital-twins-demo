@@ -613,6 +613,28 @@ Après la phrase 5 :
 
 Si le bandeau proactif 🔥 est visible : expliquer l'advisory proactif en bonus.
 
+### Known demo gotchas
+
+| Symptôme | Cause | Remède |
+|----------|-------|--------|
+| `FileNotFoundException: Properties\appsettings.json` | Working directory ≠ projet SmartNode | Patch appliqué dans `Program.cs` : `appsettings.json` est résolu via le dossier de l'assembly. `dotnet run --project SmartNode/SmartNode/SmartNode.csproj` fonctionne maintenant depuis n'importe quel CWD. |
+| Économies < 5% sur la charge Tesla | Fenêtre d'optimisation trop courte (n'inclut pas les heures creuses de nuit) | Lancer la charge **le matin** (avant 10h) avec deadline `7h le lendemain` → fenêtre 21h qui inclut les prix nocturnes (~0.99 NOK/kWh vs ~1.20 en pointe). |
+| `[OPTIMIZE] windowBuckets=6` ou moins | Nord Pool retourne des slots 15-min, ancien code prenait `Take(24)` = 6h | Patch appliqué dans `NordPoolForecastProvider.cs` : `Take(horizon)` remplacé par filtre temporel `s.Start < nowLocal.AddHours(horizon)`. Vérifier dans le terminal SmartNode : `[OPTIMIZE] rawSlots=192 hourlyBuckets=48 windowBuckets=15...`. |
+| `NordPool: ... area=NO5 not found in response` | Home Assistant retourne `"no5"` (lowercase) au lieu de `"NO5"` | Patch appliqué dans `NordPoolForecastProvider.cs` : lookup case-insensitive. Si l'erreur revient, l'aire HA réelle est loggée dans le body de la réponse. |
+| Schedule disparaît après restart | OK avant le patch — était volatile | Patch appliqué : `state-data/schedules.json` est sauvegardé après chaque création/completion/cancel. Au restart, les `running` deviennent `interrupted`. |
+| `MAPE-K loop failed — HTTP API continues` | HA injoignable mais SmartNode tourne | Vérifier `docker ps` (conteneur `ha-instance` up + port 8123) puis attendre le prochain cycle (60 s). |
+| Chatbox dit *SmartNode unreachable* | Port 8080 occupé ou SmartNode crashé | `netstat -ano | findstr :8080` puis Ctrl+C dans la fenêtre `dotnet run` et relancer. |
+
+### Logs à surveiller pendant la démo
+
+| Log | Phase | Fichier source |
+|-----|-------|----------------|
+| `Generated ActuationAction` | Plan (inférence Java) | sortie JAR |
+| `Running simulation #N` | Plan (FMU look-ahead) | `Logic/Mapek/MapekPlan.cs` |
+| `NordPool: 2026-XX-XX → 96 slots added` | Forecast | `NordPoolForecastProvider.cs` |
+| `[OPTIMIZE] rawSlots=192 hourlyBuckets=48 windowBuckets=15 ... cheapest3=04:00@0.9954, ...` | Optimize endpoint | `Program.cs` |
+| `[SCHEDULE <id>] h=0 → ON (CarCharger)` | Execute schedule | `ScheduleManager.cs` |
+
 ### Questions probables du jury
 
 | Question | Réponse courte |
