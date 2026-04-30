@@ -15,6 +15,8 @@
 - [4. Récupération en cas de panne](#4-récupération-en-cas-de-panne)
 - [5. Arrêt propre](#5-arrêt-propre)
 - [6. Export Home Assistant → TTL (tools/hass-to-rdt)](#6-export-home-assistant--ttl-toolshass-to-rdt)
+- [7. Moteur d'inférence en standalone (moment fort démo)](#7-moteur-dinférence-en-standalone-moment-fort-démo)
+- [8. Scénario démo live (script 5 phrases)](#8-scénario-démo-live-script-5-phrases)
 
 ---
 
@@ -235,13 +237,43 @@ Invoke-RestMethod -Uri http://localhost:8080/api/nlu -Method Post `
 
 ### 3.5 — Données stockées (si `SaveMapekCycleData=true`)
 ```powershell
-# Cycles persistés
-Get-ChildItem c:\dev\ruleless-digital-twins\state-data\ -Recurse `
-  | Sort-Object LastWriteTime -Descending | Select-Object -First 5 Name, Length, LastWriteTime
+# Cycles persistés (CSV par propriété et par actuateur)
+Get-ChildItem state-data\ -Recurse `
+  | Sort-Object LastWriteTime -Descending | Select-Object -First 10 Name, Length, LastWriteTime
 
-# Cases MongoDB (si activé)
+# Historique des schedules (persiste entre les redémarrages SmartNode)
+Get-Content state-data\schedules.json | ConvertFrom-Json | Select-Object id, targetName, status, startedAt
+
+# Cases MongoDB (si UseCaseBasedFunctionality=true)
 docker exec mongo-rdt mongosh --quiet --eval "use CaseBase; db.Cases.countDocuments()" 2>$null
 ```
+
+### 3.6 — Vérifier les logs FMU (simulation visible)
+
+Pendant que SmartNode tourne, chercher dans le terminal `dotnet run` :
+
+```
+Generating simulations.
+Running simulation #1
+Running simulation #2
+...
+Generated a total of N simulation paths.
+```
+
+> Ces lignes confirment que le FMU est exécuté pendant la phase **Plan** de MAPE-K.
+> Si elles n'apparaissent pas, vérifier que `Environment` = `homeassistant` dans `appsettings.json`
+> et que les fichiers `.fmu` sont présents dans `SmartNode/Implementations/FMUs/`.
+
+### 3.7 — Advisory proactif Nord Pool
+
+```powershell
+# 204 = pas encore de cycle MAPE-K ; JSON = advisory calculé
+Invoke-RestMethod http://localhost:8080/api/proactive/status
+# Champs clés : shouldPreheat, shouldDeferLoad, reason, currentPrice, q1, q3
+```
+
+Dans l'UI, le bandeau proactif (🔥 preheat / ⏸️ defer) s'affiche automatiquement si l'advisory est actif.
+Il se rafraîchit toutes les 30 s. Le bouton **Preheat now (+1°C)** appelle `/api/actuate` directement.
 
 ---
 
@@ -528,4 +560,69 @@ Si une étape échoue → consulter la section 4 correspondante.
 
 ---
 
-*Dernière mise à jour : avril 2026.*
+---
+
+## 7. Moteur d'inférence en standalone (moment fort démo)
+
+> Exécuter **avant** de lancer SmartNode pour avoir un `.ttl` inféré frais à montrer.
+
+```powershell
+cd models-and-rules
+java -jar ruleless-digital-twins-inference-engine.jar `
+     ..\ontology\ruleless-digital-twins.ttl `
+     homeassistant-ha-instance.ttl `
+     inference-rules.rules `
+     homeassistant-ha-inferred-DEMO.ttl
+```
+
+Comparer les tailles (la valeur ajoutée du raisonnement est visible en bytes) :
+
+```powershell
+"{0} bytes — instance (entrée)" -f (Get-Item homeassistant-ha-instance.ttl).Length
+"{0} bytes — inféré (sortie)"   -f (Get-Item homeassistant-ha-inferred-DEMO.ttl).Length
+```
+
+Pointer dans VS Code :
+- `homeassistant-ha-instance.ttl` : données brutes, pas de violations calculées
+- `homeassistant-ha-inferred-DEMO.ttl` : triplets inférés, chercher `meta:isViolated`
+
+```powershell
+Select-String -Path homeassistant-ha-inferred-DEMO.ttl -Pattern "isViolated"
+```
+
+---
+
+## 8. Scénario démo live (script 5 phrases)
+
+> **Conseil économies** : lancer le scénario le **matin** (avant 10h) avec la deadline 7h du lendemain.
+> Cela donne ~21h de fenêtre → les prix Nord Pool varient davantage → **10-20 % d'économies** affichées
+> au lieu de 2-4 % si on lance l'après-midi avec 4h restantes.
+
+| # | Phrase à taper dans le chatbox | Ce que ça montre |
+|---|-------------------------------|-----------------|
+| 1 | `quelle est la température du salon ?` | NLU + query HA en direct |
+| 2 | `allume la lumière de la cuisine` | Actuateur réel → toggle visible dans HA Lovelace |
+| 3 | `mets la température à 23 degrés` | InputNumber actuator → curseur HA bouge |
+| 4 | `quel est le statut de la maison ?` | Dashboard complet (temp + puissance + AQI + lumières) |
+| 5 | `charge la Tesla à 100 % pour 7h du matin` | Optimisation Nord Pool + barre 24h + % économies |
+
+Après la phrase 5 :
+1. Cliquer **▶ Exécuter** → le bandeau `⏱ SCHEDULES` apparaît
+2. `input_boolean.showcase_car_charger` toggle dans HA toutes les 60 s (mode démo : 1h = 1 min)
+3. Cliquer ✕ sur le schedule pour le annuler → statut `cancelled` visible dans le bandeau
+
+Si le bandeau proactif 🔥 est visible : expliquer l'advisory proactif en bonus.
+
+### Questions probables du jury
+
+| Question | Réponse courte |
+|----------|----------------|
+| *Pourquoi pas des règles fixes ?* | Flexibilité : nouvelles entités HA = 0 ligne de code ; le raisonnement s'adapte |
+| *Comment scale à 300 entités ?* | Registry dynamique HA déjà câblé ; l'ontologie est générique SOSA/SSN |
+| *Sécurité du token HA ?* | Variable d'env, jamais committé, scope long-lived |
+| *Pourquoi Ollama local ?* | Privacy + latence + offline + 0 coût par token |
+| *Que se passe-t-il si HA tombe ?* | MAPE-K cycle fail → log + retry automatique au cycle suivant (implémenté dans MapekManager) |
+
+---
+
+*Dernière mise à jour : 2026-04-28.*

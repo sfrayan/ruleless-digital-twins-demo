@@ -128,6 +128,10 @@ namespace SmartNode
             var haRegistry = host.Services.GetRequiredService<HomeAssistantRegistry>();
             haRegistry.Start();
 
+            // Restore schedule history from previous run.
+            ScheduleManager.Configure(filepathArguments.DataDirectory);
+            ScheduleManager.Load();
+
             // Start internal API
             _ = Task.Run(async () => {
                 try {
@@ -668,6 +672,12 @@ Rules:
                                     .Where(b => b.Complete && b.Start >= windowStart && b.End <= deadlineCandidate)
                                     .OrderBy(b => b.Start)
                                     .ToList();
+
+                                logger.LogInformation(
+                                    "[OPTIMIZE] forecast.Slots={fs} allBuckets={ab} hourBuckets={hb} windowStart={ws:o} deadlineCandidate={dc:o} | first3slots={slots}",
+                                    forecast.Slots.Count, allBuckets.Count, hourBuckets.Count,
+                                    windowStart, deadlineCandidate,
+                                    string.Join(", ", forecast.Slots.Take(3).Select(s => $"{s.Start:HH:mm}→{s.End:HH:mm}@{s.Price:F4}")));
 
                                 if (hourBuckets.Count == 0) {
                                     var emptyJson = System.Text.Json.JsonSerializer.Serialize(new {

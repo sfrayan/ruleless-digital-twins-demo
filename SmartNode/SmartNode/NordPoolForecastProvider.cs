@@ -212,24 +212,34 @@ internal static class NordPoolForecastProvider
             JsonElement areaArray = default;
             bool found = false;
 
+            // Case-insensitive area match — HA may return "no5" instead of "NO5"
             if (root.TryGetProperty("service_response", out var sr))
             {
-                if (sr.TryGetProperty(area, out var arr) && arr.ValueKind == JsonValueKind.Array)
+                foreach (var prop in sr.EnumerateObject())
                 {
-                    areaArray = arr; found = true;
+                    if (string.Equals(prop.Name, area, StringComparison.OrdinalIgnoreCase)
+                        && prop.Value.ValueKind == JsonValueKind.Array)
+                    { areaArray = prop.Value; found = true; break; }
                 }
             }
-            if (!found && root.TryGetProperty(area, out var arr2) && arr2.ValueKind == JsonValueKind.Array)
+            if (!found)
             {
-                areaArray = arr2; found = true;
+                foreach (var prop in root.EnumerateObject())
+                {
+                    if (string.Equals(prop.Name, area, StringComparison.OrdinalIgnoreCase)
+                        && prop.Value.ValueKind == JsonValueKind.Array)
+                    { areaArray = prop.Value; found = true; break; }
+                }
             }
 
             if (!found)
             {
-                logger.LogInformation("NordPool: get_prices_for_date {date} body did not contain area {area}", dateLocal, area);
+                var preview = raw.Length > 600 ? raw[..600] : raw;
+                logger.LogWarning("NordPool: {date} area={area} not found in response. Body: {body}", dateLocal, area, preview);
                 return;
             }
 
+            int before = slots.Count;
             foreach (var item in areaArray.EnumerateArray())
             {
                 if (!item.TryGetProperty("start", out var sEl)) continue;
@@ -249,10 +259,11 @@ internal static class NordPoolForecastProvider
 
                 slots.Add(new Slot(startLocal, endLocal, startLocal.Hour, pricePerKwh));
             }
+            logger.LogInformation("NordPool: {date} → {n} slots added (total={t})", dateLocal, slots.Count - before, slots.Count);
         }
         catch (Exception ex)
         {
-            logger.LogInformation("NordPool: get_prices_for_date {date} failed: {msg}", dateLocal, ex.Message);
+            logger.LogWarning("NordPool: get_prices_for_date {date} failed: {msg}", dateLocal, ex.Message);
         }
     }
 

@@ -25,6 +25,41 @@ namespace SmartNode
         private static readonly Dictionary<string, ScheduleInfo> _infos = new();
         private static readonly Dictionary<string, CancellationTokenSource> _ctss = new();
         private static readonly object _lock = new();
+        private static string? _dataDir;
+        private const string ScheduleFile = "schedules.json";
+
+        public static void Configure(string dataDirectory) => _dataDir = dataDirectory;
+
+        public static void Load()
+        {
+            if (_dataDir is null) return;
+            var path = Path.Combine(_dataDir, ScheduleFile);
+            if (!File.Exists(path)) return;
+            try {
+                var json = File.ReadAllText(path);
+                var list = System.Text.Json.JsonSerializer.Deserialize<List<ScheduleInfo>>(json);
+                if (list is null) return;
+                lock (_lock) {
+                    foreach (var info in list) {
+                        if (info.Status == "running") info.Status = "interrupted";
+                        _infos[info.Id] = info;
+                    }
+                }
+            } catch { }
+        }
+
+        private static void Save()
+        {
+            if (_dataDir is null) return;
+            try {
+                Directory.CreateDirectory(_dataDir);
+                List<ScheduleInfo> snapshot;
+                lock (_lock) { snapshot = _infos.Values.ToList(); }
+                var json = System.Text.Json.JsonSerializer.Serialize(snapshot,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(Path.Combine(_dataDir, ScheduleFile), json);
+            } catch { }
+        }
 
         public static string Start(IFactory factory, ILogger logger,
                                     string targetUri, string targetName,
@@ -49,6 +84,7 @@ namespace SmartNode
                 _infos[id] = info;
                 _ctss[id] = cts;
             }
+            Save();
 
             _ = Task.Run(async () =>
             {
@@ -84,16 +120,19 @@ namespace SmartNode
                         logger.LogInformation("[SCHEDULE {Id}] end → OFF", id);
                     }
                     info.Status = "completed";
+                    Save();
                 }
                 catch (OperationCanceledException)
                 {
                     info.Status = "cancelled";
+                    Save();
                     logger.LogInformation("[SCHEDULE {Id}] cancelled at h={H}", id, info.CurrentHour);
                 }
                 catch (Exception ex)
                 {
                     info.Status = "failed";
                     info.LastError = ex.Message;
+                    Save();
                     logger.LogError(ex, "[SCHEDULE {Id}] crashed at h={H}", id, info.CurrentHour);
                 }
                 finally
