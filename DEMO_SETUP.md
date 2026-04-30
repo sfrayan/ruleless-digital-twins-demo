@@ -626,6 +626,8 @@ Si le bandeau proactif 🔥 est visible : expliquer l'advisory proactif en bonus
 | Chatbox dit *SmartNode unreachable* | Port 8080 occupé ou SmartNode crashé | `netstat -ano | findstr :8080` puis Ctrl+C dans la fenêtre `dotnet run` et relancer. |
 
 > **Sur les économies Nord Pool** : les prix réels varient chaque jour. La démo ne vise pas un nombre fixe à 20%. La preuve importante est que l'optimizer sélectionne des fenêtres futures moins chères et reporte les économies à la fois vs *window-average* et vs *peak-hours baseline*.
+>
+> **Honnêteté de la démo Tesla / EV** : le scénario d'optimisation EV utilise les **prix Nord Pool live de Home Assistant** (vérifiable via la ligne *Price source* de la carte optimizer + log `[OPTIMIZE] priceSource=homeassistant_nordpool`), mais le **chargeur est un actuateur démo configuré** (`CarCharger`, 11 kW × 4 h par défaut). Aucune vraie entité Tesla (SOC, plugged/unplugged, puissance réelle) n'est lue à ce stade — le même mécanisme se branche sur une vraie entité HA charger/Tesla en remplaçant la cible. Si HA/Nord Pool est indisponible, l'optimizer **refuse de répondre** plutôt que de retomber sur des prix simulés (la carte affiche `Live Nord Pool forecast unavailable — optimization not launched`).
 
 ### Logs à surveiller pendant la démo
 

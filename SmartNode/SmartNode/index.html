@@ -698,6 +698,9 @@
                 <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">
                     Bar height ∝ price (range ${minPrice.toFixed(2)}–${maxPrice.toFixed(2)} ${currencyForBars}/kWh). Hover for exact values.
                 </div>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">
+                    Price source: <b>Home Assistant Nord Pool live forecast</b> (area ${plan.area || '?'}, ${plan.raw_slot_count ?? '?'} raw slots → ${plan.hourly_bucket_count ?? '?'} hourly buckets in window). Charger workload is a configured demo actuator (${plan.target || 'CarCharger'}, ${plan.power_kw} kW × ${actualH}h).
+                </div>
                 <div style="margin-top:8px;font-size:0.85rem;line-height:1.5;">
                     Chosen charging windows:${slotLines}<br>
                     ${actualH}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} ${currency}</b>${baselineNote}<br>

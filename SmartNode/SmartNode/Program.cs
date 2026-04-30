@@ -609,9 +609,14 @@ Rules:
 
                                 if (!forecast.ForecastAvailable) {
                                     var noFc = System.Text.Json.JsonSerializer.Serialize(new {
+                                        ok = false,
                                         optimized = false,
                                         forecastAvailable = false,
+                                        forecast_available = false,
+                                        error = "Live Nord Pool forecast unavailable from Home Assistant",
                                         reason = forecast.Warning ?? "Future Nord Pool price forecast unavailable",
+                                        warning = forecast.Warning,
+                                        price_source = "homeassistant_nordpool",
                                         priceSource = forecast.Source,
                                         configEntryDiscovered = forecast.ConfigEntryDiscovered,
                                         area = forecast.Area,
@@ -680,7 +685,8 @@ Rules:
                                     hourBuckets.OrderBy(b => b.AvgPrice).Take(3)
                                         .Select(b => $"{b.Start:HH:mm}@{b.AvgPrice:F4}"));
                                 logger.LogInformation(
-                                    "[OPTIMIZE] rawSlots={fs} hourlyBuckets={ab} windowBuckets={hb} windowStart={ws:HH:mm} deadline={dc:HH:mm} | cheapest3={c}",
+                                    "[OPTIMIZE] priceSource=homeassistant_nordpool target={tg} powerKw={pk} duration={dh}h rawSlots={fs} hourlyBuckets={ab} windowBuckets={hb} windowStart={ws:HH:mm} deadline={dc:HH:mm} | cheapest3={c}",
+                                    target ?? "<none>", powerKw, requestedDurationHours,
                                     forecast.Slots.Count, allBuckets.Count, hourBuckets.Count,
                                     windowStart, deadlineCandidate, cheapest3);
 
@@ -770,7 +776,11 @@ Rules:
                                 var result = new {
                                     optimized = true,
                                     forecastAvailable = true,
+                                    forecast_available = true,
+                                    price_source = "homeassistant_nordpool",
                                     priceSource = forecast.Source,
+                                    raw_slot_count = forecast.Slots.Count,
+                                    hourly_bucket_count = hourBuckets.Count,
                                     configEntryDiscovered = forecast.ConfigEntryDiscovered,
                                     area = forecast.Area,
                                     currency = forecast.Currency,
