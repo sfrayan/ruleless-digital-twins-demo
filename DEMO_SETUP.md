@@ -1,152 +1,152 @@
-# DEMO_SETUP.md — Lancement de la démo (Windows 11)
+# DEMO_SETUP.md — Launching the Demo (Windows 11)
 
-> Procédure copy-paste-ready pour lancer la démo `ruleless-digital-twins` de zéro sur Windows 11. Toutes les commandes sont en **PowerShell**.
+> Copy-paste-ready procedure to launch the `ruleless-digital-twins` demo from scratch on Windows 11. All commands are in **PowerShell**.
 >
-> **Cible** : démo en moins de 5 minutes, à froid, sans toucher au code.
-> **Voisins du repo** : `[ROADMAP.md](ROADMAP.md)` (vision plus large) · `[README.md](README.md)` (concepts).
+> **Goal**: demo in less than 5 minutes, from cold, without touching code.
+> **Related repo files**: `[ROADMAP.md](ROADMAP.md)` (broader vision) · `[README.md](README.md)` (concepts).
 
 ---
 
-## Sommaire
-- [1. Prérequis](#1-prérequis)
-- [1bis. Bootstrap (clone propre)](#1bis-bootstrap-clone-propre)
-- [2. Lancement séquentiel](#2-lancement-séquentiel)
-- [3. Vérifications lecture seule](#3-vérifications-lecture-seule)
-- [4. Récupération en cas de panne](#4-récupération-en-cas-de-panne)
-- [5. Arrêt propre](#5-arrêt-propre)
-- [6. Export Home Assistant → TTL (tools/hass-to-rdt)](#6-export-home-assistant--ttl-toolshass-to-rdt)
-- [7. Moteur d'inférence en standalone (moment fort démo)](#7-moteur-dinférence-en-standalone-moment-fort-démo)
-- [8. Scénario démo live (script 5 phrases)](#8-scénario-démo-live-script-5-phrases)
+## Table of Contents
+- [1. Prerequisites](#1-prerequisites)
+- [1bis. Bootstrap (clean clone)](#1bis-bootstrap-clean-clone)
+- [2. Sequential Launch](#2-sequential-launch)
+- [3. Read-only Verifications](#3-read-only-verifications)
+- [4. Recovery in Case of Failure](#4-recovery-in-case-of-failure)
+- [5. Clean Stop](#5-clean-stop)
+- [6. Home Assistant → TTL Export (tools/hass-to-rdt)](#6-export-home-assistant--ttl-toolshass-to-rdt)
+- [7. Standalone Inference Engine (demo highlight)](#7-moteur-dinférence-en-standalone-moment-fort-démo)
+- [8. Live Demo Scenario (5-phrase script)](#8-scénario-démo-live-script-5-phrases)
 
 ---
 
-## 1. Prérequis
+## 1. Prerequisites
 
-### Logiciels installés
-| Outil | Vérification | Source |
+### Installed Software
+| Tool | Verification | Source |
 |---|---|---|
 | Windows 11 | `winver` | — |
 | Docker Desktop (WSL2 backend) | `docker --version` | https://docs.docker.com/desktop/install/windows-install/ |
-| .NET 8 SDK | `dotnet --info` (cherche `Microsoft.NETCore.App 8.0.x`) | https://dotnet.microsoft.com/en-us/download/dotnet/8.0 |
-| Java JRE 11+ | `java -version` | OpenJDK ou Adoptium |
+| .NET 8 SDK | `dotnet --info` (look for `Microsoft.NETCore.App 8.0.x`) | https://dotnet.microsoft.com/en-us/download/dotnet/8.0 |
+| Java JRE 11+ | `java -version` | OpenJDK or Adoptium |
 | Ollama | `ollama --version` | https://ollama.com/download |
 
-### Modèle Ollama requis
+### Required Ollama Model
 ```powershell
 ollama list
-# Doit afficher : qwen2.5-coder:7b
-# Sinon : ollama pull qwen2.5-coder:7b
+# Should display: qwen2.5-coder:7b
+# Otherwise: ollama pull qwen2.5-coder:7b
 ```
 
-### Conteneurs Docker requis
-| Nom | Image | Port | Rôle |
+### Required Docker Containers
+| Name | Image | Port | Role |
 |---|---|---|---|
 | `ha-instance` | `kristofferwagen/ha-instance:latest` | 8123 | Home Assistant showcase |
-| `jarvis-ollama` | `ollama/ollama:latest` | 11434 | LLM local pour le NLU |
-| `mongo-rdt` *(optionnel)* | `mongo:latest` | 27017 | Case-based reasoning |
+| `jarvis-ollama` | `ollama/ollama:latest` | 11434 | Local LLM for NLU |
+| `mongo-rdt` *(optional)* | `mongo:latest` | 27017 | Case-based reasoning |
 
-### Bind-mount HA
-Le conteneur `ha-instance` doit être lié à `C:\ha-showcase-config\` pour persister le user admin et le token entre redémarrages :
+### HA Bind-mount
+The `ha-instance` container must be linked to `C:\ha-showcase-config\` to persist the admin user and token between restarts:
 ```powershell
 Test-Path C:\ha-showcase-config\configuration.yaml
-# Doit retourner : True
+# Should return: True
 ```
 
-Si `False`, voir [4.5 — recréer le conteneur ha-instance](#45-recréer-le-conteneur-ha-instance-from-scratch).
+If `False`, see [4.5 — recreate the ha-instance container from scratch](#45-recréer-le-conteneur-ha-instance-from-scratch).
 
 ---
 
-## 1bis. Bootstrap (clone propre)
+## 1bis. Bootstrap (clean clone)
 
-> À exécuter **une seule fois** sur une machine neuve, ou après un `git clone` frais. Skip si tu as déjà un workspace fonctionnel.
+> To be executed **only once** on a new machine, or after a fresh `git clone`. Skip if you already have a functional workspace.
 
 ### 1bis.1 — Submodules
 
-Trois sous-modules sont déclarés dans `.gitmodules` (Femyou, Nordpool-FMU, PythonFMU) et **doivent** être tirés sinon SmartNode ne compilera pas :
+Three submodules are declared in `.gitmodules` (Femyou, Nordpool-FMU, PythonFMU) and **must** be pulled, otherwise SmartNode will not compile:
 
 ```powershell
 cd C:\dev\ruleless-digital-twins
 git submodule update --init --recursive
 ```
 
-### 1bis.2 — Démarrer la stack démo via Docker Compose
+### 1bis.2 — Start the Demo Stack via Docker Compose
 
-Le compose dédié `services/docker-compose.demo.yml` lance Home Assistant + MongoDB. RabbitMQ et Ollama y sont **commentés** (cf. notes dans le fichier — décommente seulement si tu démontres l'env `incubator` ou veux Ollama containerisé) :
+The dedicated compose file `services/docker-compose.demo.yml` launches Home Assistant + MongoDB. RabbitMQ and Ollama are **commented out** (see notes in the file — uncomment only if you are demonstrating the `incubator` environment or want containerized Ollama):
 
 ```powershell
 docker compose -f services/docker-compose.demo.yml up -d
 docker compose -f services/docker-compose.demo.yml ps
-# ha-instance et rdt-mongodb doivent être Up
+# ha-instance and rdt-mongodb should be Up
 ```
 
-Variables d'environnement utiles (à placer dans le shell ou un `.env` local) :
+Useful environment variables (to be placed in the shell or a local `.env` file):
 
 ```powershell
-$env:HA_CONFIG_DIR = "C:\ha-showcase-config"      # bind-mount HA (default)
-$env:TZ            = "Europe/Oslo"                 # timezone HA
-$env:TOKEN_HA      = "<long_lived_token>"          # requis pour SmartNode
-$env:HA_URL        = "http://localhost:8123/api/"  # utilisé par hacvt_rdt
+$env:HA_CONFIG_DIR = "C:\ha-showcase-config"      # HA bind-mount (default)
+$env:TZ            = "Europe/Oslo"                 # HA timezone
+$env:TOKEN_HA      = "<long_lived_token>"          # required for SmartNode
+$env:HA_URL        = "http://localhost:8123/api/"  # used by hacvt_rdt
 $env:RDT_NAMESPACE = "http://www.semanticweb.org/rayan/ontologies/2025/ha/"
 ```
 
-> Ollama : si tu utilises l'instance Ollama du host (par défaut), ne décommente PAS le service `ollama` dans le compose — conflit sur le port 11434.
+> Ollama: if you are using the host's Ollama instance (default), DO NOT uncomment the `ollama` service in the compose file — port conflict on 11434.
 
 ---
 
-## 2. Lancement séquentiel
+## 2. Sequential Launch
 
-> Variante manuelle (équivalente au bootstrap §1bis.2 si tu préfères piloter chaque conteneur). Si tu as déjà fait `docker compose up -d`, saute à 2.2.
+> Manual variant (equivalent to bootstrap §1bis.2 if you prefer to pilot each container). If you have already done `docker compose up -d`, skip to 2.2.
 
-### 2.1 — Démarrer les conteneurs
+### 2.1 — Start Containers
 ```powershell
 docker start ha-instance
 docker start jarvis-ollama
 
-# Optionnel — uniquement si UseCaseBasedFunctionality=true dans appsettings.json
+# Optional — only if UseCaseBasedFunctionality=true in appsettings.json
 # docker start mongo-rdt
 ```
 
-Attends ~20 s puis :
+Wait ~20 s then:
 ```powershell
 docker ps --format "table {{.Names}}`t{{.Status}}`t{{.Ports}}"
-# ha-instance et jarvis-ollama doivent afficher "Up X seconds"
+# ha-instance and jarvis-ollama should display "Up X seconds"
 ```
 
-### 2.2 — Vérifier le réseau de `ha-instance`
-HA doit être attaché au réseau `bridge` et avoir une IPv4 (`172.17.0.x`). Sinon zeroconf crashe en boucle (cf. [4.2](#42-ha-instance-na-pas-de-réseau-eth0-manquant)).
+### 2.2 — Verify `ha-instance` Network
+HA must be attached to the `bridge` network and have an IPv4 (`172.17.0.x`). Otherwise, zeroconf crashes in a loop (see [4.2](#42-ha-instance-na-pas-de-réseau-eth0-manquant)).
 
 ```powershell
 docker exec ha-instance ip -4 addr show eth0
-# Sortie attendue :
+# Expected output:
 # 2: eth0@if10: <BROADCAST,MULTICAST,UP,LOWER_UP> ...
 #     inet 172.17.0.x/16 brd 172.17.255.255 scope global eth0
 ```
 
-Si tu vois `RTNETLINK answers: Cannot find device "eth0"` ou rien → fix [4.2](#42-ha-instance-na-pas-de-réseau-eth0-manquant).
+If you see `RTNETLINK answers: Cannot find device "eth0"` or nothing → fix [4.2](#42-ha-instance-na-pas-de-réseau-eth0-manquant).
 
-Test HTTP :
+HTTP Test:
 ```powershell
 Invoke-WebRequest -Uri http://localhost:8123/ -UseBasicParsing -TimeoutSec 5 `
   | Select-Object StatusCode
-# Attendu : StatusCode 200
+# Expected: StatusCode 200
 ```
 
-### 2.3 — Définir `TOKEN_HA`
-Le token long-lived HA est requis dans **chaque session PowerShell** où tu lances `dotnet run`. Il est stocké dans `C:\ha-showcase-config\.storage\auth_provider.homeassistant` côté HA, mais SmartNode le lit dans la variable d'environnement :
+### 2.3 — Define `TOKEN_HA`
+The HA long-lived token is required in **every PowerShell session** where you launch `dotnet run`. It is stored in `C:\ha-showcase-config\.storage\auth_provider.homeassistant` on the HA side, but SmartNode reads it from the environment variable:
 
 ```powershell
-$env:TOKEN_HA = "<colle_ici_ton_token_long_lived>"
+$env:TOKEN_HA = "<paste_your_long_lived_token_here>"
 ```
 
-Si tu n'as pas/plus de token : voir [4.4 — recréer un token](#44-token-perdu-ou-401-après-recréation-du-conteneur).
+If you don't have/no longer have a token: see [4.4 — recreate a token](#44-token-perdu-ou-401-après-recréation-du-conteneur).
 
-### 2.4 — Lancer SmartNode
+### 2.4 — Launch SmartNode
 ```powershell
 cd C:\dev\ruleless-digital-twins\SmartNode\SmartNode
 dotnet run
 ```
 
-Attendu dans les premières secondes :
+Expected in the first few seconds:
 ```
 HH:MM:SS info: SmartNode.Program[0]
       Internal API listening on http://localhost:8080/
@@ -154,103 +154,103 @@ HH:MM:SS info: Logic.Mapek.IMapekManager[0]
       Starting the MAPE-K loop. (maxRounds= -1)
 ```
 
-Si `MAPE-K loop failed — HTTP API continues` apparaît : SmartNode tourne quand même (chatbox utilisable), mais HA est probablement injoignable → vérifie [2.2](#22-vérifier-le-réseau-de-ha-instance).
+If `MAPE-K loop failed — HTTP API continues` appears: SmartNode is still running (chatbox usable), but HA is likely unreachable → verify [2.2](#22-vérifier-le-réseau-de-ha-instance).
 
-**Laisse cette fenêtre PowerShell ouverte pendant toute la démo.**
+**Keep this PowerShell window open during the entire demo.**
 
-### 2.5 — Ouvrir le chatbox
-Dans une autre fenêtre PowerShell :
+### 2.5 — Open the Chatbox
+In another PowerShell window:
 ```powershell
 start C:\dev\ruleless-digital-twins\SmartNode\SmartNode\index.html
 ```
 
-Vérifications visuelles dans le navigateur (interface 100% anglaise depuis avril 2026) :
-- En-tête : pastille **verte** + texte `SmartNode + HA connected`
-- Dashboard : Temperature / Power / Air quality affichent des valeurs (pas `—`)
-- Section `QUICK ACTIONS` avec 6 chips : *Turn on living room*, *Turn off kitchen*, *Set 22°C*, *House status*, *Energy price*, *Charge Tesla overnight*
+Visual verifications in the browser (100% English interface since April 2026):
+- Header: **green** dot + text `SmartNode + HA connected`
+- Dashboard: Temperature / Power / Air quality display values (not `—`)
+- `QUICK ACTIONS` section with 6 chips: *Turn on living room*, *Turn off kitchen*, *Set 22°C*, *House status*, *Energy price*, *Charge Tesla overnight*
 
-Si la pastille reste rouge → vérifie le terminal `dotnet run` (logs d'erreur) et [3](#3-vérifications-lecture-seule).
+If the dot remains red → verify the `dotnet run` terminal (error logs) and [3](#3-vérifications-lecture-seule).
 
 ---
 
-## 3. Vérifications lecture seule
+## 3. Read-only Verifications
 
-> Aucune commande ci-dessous ne modifie rien — utilisable en plein run pour diagnostiquer.
+> None of the commands below modify anything — usable during a full run to diagnose.
 
-### 3.1 — Conteneurs et réseau
+### 3.1 — Containers and Network
 ```powershell
-# État des 3 conteneurs critiques
+# State of the 3 critical containers
 docker ps -a --filter "name=ha-instance" --filter "name=jarvis-ollama" --filter "name=mongo-rdt" `
   --format "table {{.Names}}`t{{.Status}}`t{{.Ports}}"
 
-# Restart policy de ha-instance et homeassistant (si présent)
+# Restart policy of ha-instance and homeassistant (if present)
 docker inspect ha-instance --format "ha-instance: restart={{.HostConfig.RestartPolicy.Name}} status={{.State.Status}}"
 docker inspect homeassistant --format "homeassistant: restart={{.HostConfig.RestartPolicy.Name}} status={{.State.Status}}" 2>$null
 
-# IP eth0 de ha-instance
+# IP eth0 of ha-instance
 docker exec ha-instance ip -4 addr show eth0 2>$null
 
-# Liste des conteneurs sur le réseau bridge
+# List of containers on the bridge network
 docker network inspect bridge --format '{{range .Containers}}{{.Name}} {{end}}'
 
-# Qui écoute sur le port 8123 du host ?
+# Who is listening on host port 8123?
 Get-NetTCPConnection -LocalPort 8123 -State Listen -ErrorAction SilentlyContinue `
   | ForEach-Object { Get-Process -Id $_.OwningProcess } | Select-Object Id, ProcessName
 ```
 
-### 3.2 — SmartNode et HA répondent
+### 3.2 — SmartNode and HA are responding
 ```powershell
-# SmartNode interne
+# Internal SmartNode
 Invoke-RestMethod http://localhost:8080/api/entities | Format-List
 
-# Lectures live capteurs
+# Live sensor readings
 Invoke-RestMethod http://localhost:8080/api/state
 
-# HA répond (sans token)
+# HA responds (without token)
 Invoke-WebRequest http://localhost:8123/ -UseBasicParsing | Select-Object StatusCode
 
-# HA avec token (vérifier qu'il est valide)
+# HA with token (verify it is valid)
 Invoke-RestMethod -Headers @{Authorization="Bearer $env:TOKEN_HA"} http://localhost:8123/api/states `
   | Group-Object {$_.entity_id.Split('.')[0]} | Select-Object Name, Count
 ```
 
-### 3.3 — Ollama prêt et NLU pipeline
+### 3.3 — Ollama ready and NLU pipeline
 ```powershell
-# Modèles disponibles
+# Available models
 (Invoke-RestMethod http://localhost:11434/api/tags).models | Select-Object name, size
 
-# Test NLU end-to-end (peut prendre 30-60s au premier appel — chargement modèle 4.7 GB)
+# End-to-end NLU test (may take 30-60s on the first call — loading 4.7 GB model)
 Invoke-RestMethod -Uri http://localhost:8080/api/nlu -Method Post `
   -ContentType 'application/json' `
-  -Body '{"message":"allume la lumière de la cuisine"}'
-# Retour attendu : objet JSON avec intent="actuate" ou "call_service", entity_id ou target défini
+  -Body '{"message":"turn on the kitchen light"}'
+# Expected return: JSON object with intent="actuate" or "call_service", entity_id or target defined
 ```
 
-### 3.4 — Registry HA dynamique chargé
+### 3.4 — Dynamic HA Registry loaded
 ```powershell
-# Doit lister toutes les entités HA cachées par SmartNode (refresh 30s)
+# Should list all HA entities cached by SmartNode (30s refresh)
 (Invoke-RestMethod http://localhost:8080/api/entities_full) | Measure-Object | Select-Object Count
 
-# Détail des 3 premières
+# Detail of the first 3
 (Invoke-RestMethod http://localhost:8080/api/entities_full) | Select-Object -First 3
 ```
 
-### 3.5 — Données stockées (si `SaveMapekCycleData=true`)
+### 3.5 — Stored Data (if `SaveMapekCycleData=true`)
 ```powershell
-# Cycles persistés (CSV par propriété et par actuateur)
+# Persisted cycles (CSV by property and by actuator)
 Get-ChildItem state-data\ -Recurse `
   | Sort-Object LastWriteTime -Descending | Select-Object -First 10 Name, Length, LastWriteTime
 
-# Historique des schedules (persiste entre les redémarrages SmartNode)
+# Schedule history (persists between SmartNode restarts)
 Get-Content state-data\schedules.json | ConvertFrom-Json | Select-Object id, targetName, status, startedAt
 
-# Cases MongoDB (si UseCaseBasedFunctionality=true)
+# MongoDB cases (if UseCaseBasedFunctionality=true)
 docker exec mongo-rdt mongosh --quiet --eval "use CaseBase; db.Cases.countDocuments()" 2>$null
 ```
 
-### 3.6 — Vérifier les logs FMU (simulation visible)
+### 3.6 — Verify FMU Logs (simulation visible)
 
-Pendant que SmartNode tourne, chercher dans le terminal `dotnet run` :
+While SmartNode is running, look in the `dotnet run` terminal for:
 
 ```
 Generating simulations.
@@ -260,239 +260,239 @@ Running simulation #2
 Generated a total of N simulation paths.
 ```
 
-> Ces lignes confirment que le FMU est exécuté pendant la phase **Plan** de MAPE-K.
-> Si elles n'apparaissent pas, vérifier que `Environment` = `homeassistant` dans `appsettings.json`
-> et que les fichiers `.fmu` sont présents dans `SmartNode/Implementations/FMUs/`.
+> These lines confirm that the FMU is being executed during the MAPE-K **Plan** phase.
+> If they do not appear, verify that `Environment` = `homeassistant` in `appsettings.json`
+> and that the `.fmu` files are present in `SmartNode/Implementations/FMUs/`.
 
-### 3.7 — Advisory proactif Nord Pool
+### 3.7 — Nord Pool Proactive Advisory
 
 ```powershell
-# 204 = pas encore de cycle MAPE-K ; JSON = advisory calculé
+# 204 = no MAPE-K cycle yet; JSON = advisory calculated
 Invoke-RestMethod http://localhost:8080/api/proactive/status
-# Champs clés : shouldPreheat, shouldDeferLoad, reason, currentPrice, q1, q3
+# Key fields: shouldPreheat, shouldDeferLoad, reason, currentPrice, q1, q3
 ```
 
-Dans l'UI, le bandeau proactif (🔥 preheat / ⏸️ defer) s'affiche automatiquement si l'advisory est actif.
-Il se rafraîchit toutes les 30 s. Le bouton **Preheat now (+1°C)** appelle `/api/actuate` directement.
+In the UI, the proactive banner (🔥 preheat / ⏸️ defer) is automatically displayed if the advisory is active.
+It refreshes every 30 s. The **Preheat now (+1°C)** button calls `/api/actuate` directly.
 
 ---
 
-## 4. Récupération en cas de panne
+## 4. Recovery in Case of Failure
 
-### 4.1 — Le port 8123 est occupé par un autre conteneur
+### 4.1 — Port 8123 is occupied by another container
 
-**Symptôme** : `docker start ha-instance` échoue avec `Bind for 0.0.0.0:8123 failed: port is already allocated`. Ou bien `ha-instance` démarre mais répond bizarrement (autre HA sur le port).
+**Symptom**: `docker start ha-instance` fails with `Bind for 0.0.0.0:8123 failed: port is already allocated`. Or `ha-instance` starts but responds strangely (another HA on the port).
 
-**Cause typique** : un second conteneur HA (`homeassistant`, lié à `C:\homeassistant\`) avec `RestartPolicy: always` qui squatte le port à chaque restart de Docker Desktop.
+**Typical Cause**: a second HA container (`homeassistant`, linked to `C:\homeassistant\`) with `RestartPolicy: always` that squats the port every time Docker Desktop restarts.
 
-**Diagnostic** :
+**Diagnosis**:
 ```powershell
 docker ps -a --filter "publish=8123" --format "table {{.Names}}`t{{.Status}}`t{{.HostConfig.RestartPolicy.Name}}"
 ```
 
-**Fix** :
+**Fix**:
 ```powershell
-# 1. Désactiver l'auto-restart du conteneur fautif (sans le supprimer ; ses données restent)
+# 1. Disable auto-restart of the faulty container (without deleting it; its data remains)
 docker update --restart=no homeassistant
 
-# 2. L'arrêter
+# 2. Stop it
 docker stop homeassistant
 
-# 3. Vérifier qu'il ne revient pas
+# 3. Verify it does not come back
 docker ps --filter "name=homeassistant" --format "{{.Names}} {{.Status}}"
-# Doit afficher "Exited" ou rien
+# Should display "Exited" or nothing
 
-# 4. Relancer ha-instance
+# 4. Relaunch ha-instance
 docker start ha-instance
 ```
 
-Pour le rallumer plus tard (en stoppant ha-instance d'abord) :
+To turn it back on later (by stopping ha-instance first):
 ```powershell
 docker stop ha-instance
 docker start homeassistant
 ```
 
-### 4.2 — `ha-instance` n'a pas de réseau (eth0 manquant)
+### 4.2 — `ha-instance` has no network (missing eth0)
 
-**Symptôme** : `docker exec ha-instance ip -4 addr show eth0` → `Cannot find device "eth0"`. Logs HA pleins de `OSError: [Errno 19] No such device` et `system does not have any enabled IPv4 addresses`.
+**Symptom**: `docker exec ha-instance ip -4 addr show eth0` → `Cannot find device "eth0"`. HA logs full of `OSError: [Errno 19] No such device` and `system does not have any enabled IPv4 addresses`.
 
-**Cause typique** : Docker Desktop / WSL2 redémarré pendant que le conteneur tournait → la NetworkSettings devient vide.
+**Typical Cause**: Docker Desktop / WSL2 restarted while the container was running → NetworkSettings becomes empty.
 
-**Diagnostic** :
+**Diagnosis**:
 ```powershell
 docker inspect ha-instance --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}: IP={{$v.IPAddress}}{{end}}'
-# Si vide → confirmé
+# If empty → confirmed
 ```
 
-**Fix** :
+**Fix**:
 ```powershell
-# 1. Stopper
+# 1. Stop
 docker stop ha-instance
 
-# 2. Reconnecter au bridge
+# 2. Reconnect to bridge
 docker network connect bridge ha-instance
 
-# 3. Redémarrer
+# 3. Restart
 docker start ha-instance
 
-# 4. Attendre 20-30s puis vérifier
+# 4. Wait 20-30s then verify
 Start-Sleep -Seconds 25
 docker exec ha-instance ip -4 addr show eth0
-# Doit afficher "inet 172.17.0.x/16"
+# Should display "inet 172.17.0.x/16"
 
 Invoke-WebRequest http://localhost:8123/ -UseBasicParsing -TimeoutSec 5 | Select StatusCode
-# Doit afficher 200
+# Should display 200
 ```
 
-### 4.3 — HA crashe encore avec `OSError: [Errno 19]` malgré eth0 OK
+### 4.3 — HA still crashes with `OSError: [Errno 19]` despite eth0 OK
 
-**Symptôme** : eth0 présent, mais `docker logs ha-instance` montre toujours zeroconf crash sur multicast.
+**Symptom**: eth0 present, but `docker logs ha-instance` still shows zeroconf crash on multicast.
 
-**Cause** : bug WSL2 connu sur l'opération `IP_ADD_MEMBERSHIP`.
+**Cause**: known WSL2 bug on the `IP_ADD_MEMBERSHIP` operation.
 
-**Fix** (par ordre d'invasivité, à essayer si le 4.2 ne suffit pas) :
+**Fix** (in order of invasiveness, to try if 4.2 is not enough):
 ```powershell
-# Option A — relancer WSL2 et Docker Desktop
+# Option A — restart WSL2 and Docker Desktop
 wsl --shutdown
-# Puis relancer Docker Desktop manuellement (ou : Stop-Process -Name "Docker Desktop")
-# Attendre 1 min que Docker reboote, puis reprendre la séquence 2.1
+# Then relaunch Docker Desktop manually (or: Stop-Process -Name "Docker Desktop")
+# Wait 1 min for Docker to reboot, then resume sequence 2.1
 
-# Option B — mettre WSL2 à jour (PowerShell admin)
+# Option B — update WSL2 (PowerShell admin)
 wsl --update
-# Ferme tout, redémarre, recommence section 2
+# Close everything, restart, resume Section 2
 
-# Option C — reboot Windows complet
+# Option C — full Windows reboot
 shutdown /r /t 0
 ```
 
-**Solution durable** : la config `C:\ha-showcase-config\configuration.yaml` remplace déjà `default_config:` par une liste explicite (sans `zeroconf`/`ssdp`/`cloud`/`go2rtc`). Si tu re-pulls une nouvelle image et perds ce patch → re-extraire avec :
+**Durable solution**: the `C:\ha-showcase-config\configuration.yaml` config already replaces `default_config:` with an explicit list (without `zeroconf`/`ssdp`/`cloud`/`go2rtc`). If you re-pull a new image and lose this patch → re-extract with:
 ```powershell
-# Voir 4.5 ci-dessous, étapes 1-3
+# See 4.5 below, steps 1-3
 ```
 
-### 4.4 — Token perdu ou 401 après recréation du conteneur
+### 4.4 — Token lost or 401 after container recreation
 
-**Symptôme** : `Invoke-RestMethod -Headers @{Authorization="Bearer $env:TOKEN_HA"} http://localhost:8123/api/states` → HTTP 401.
+**Symptom**: `Invoke-RestMethod -Headers @{Authorization="Bearer $env:TOKEN_HA"} http://localhost:8123/api/states` → HTTP 401.
 
-**Cause** : recréation du conteneur a wipé `.storage/auth_provider.homeassistant` (ou tu as collé un token périmé).
+**Cause**: container recreation wiped `.storage/auth_provider.homeassistant` (or you pasted an expired token).
 
-**Fix — créer un user admin et générer un nouveau token** :
+**Fix — create an admin user and generate a new token**:
 ```powershell
-# 1. Vérifier que le user admin existe (sinon "Total users: 0")
+# 1. Verify that the admin user exists (otherwise "Total users: 0")
 docker exec ha-instance hass --script auth list
 
-# 2a. Si user existe mais pas de credentials → recréer le password
+# 2a. If user exists but no credentials → recreate password
 docker exec ha-instance hass --script auth add admin admin
-# Attendu : "Auth created"
+# Expected: "Auth created"
 
-# 2b. Si user existe et tu connais le password → reset
-# docker exec ha-instance hass --script auth change_password admin <nouveau_pwd>
+# 2b. If user exists and you know the password → reset
+# docker exec ha-instance hass --script auth change_password admin <new_pwd>
 
-# 3. Aller sur http://localhost:8123 → login admin / admin
-# 4. Profil (icône en bas à gauche) → Security → Create Long-Lived Access Token
-# 5. Donner un nom (ex: "smartnode") → COPIER le token (visible 1 seule fois !)
+# 3. Go to http://localhost:8123 → login admin / admin
+# 4. Profile (icon in bottom left) → Security → Create Long-Lived Access Token
+# 5. Give it a name (e.g.: "smartnode") → COPY the token (visible only once!)
 
-# 6. Réinjecter dans la session PowerShell de SmartNode
-$env:TOKEN_HA = "<token_collé>"
+# 6. Re-inject into the SmartNode PowerShell session
+$env:TOKEN_HA = "<pasted_token>"
 
-# 7. Relancer SmartNode (Ctrl+C dans son terminal puis dotnet run)
+# 7. Relaunch SmartNode (Ctrl+C in its terminal then dotnet run)
 ```
 
-### 4.5 — Recréer le conteneur `ha-instance` from scratch
+### 4.5 — Recreate the `ha-instance` container from scratch
 
-À utiliser uniquement si `C:\ha-showcase-config\` est corrompu ou si tu pars d'une machine vierge.
+To be used only if `C:\ha-showcase-config\` is corrupted or if you are starting from a clean machine.
 
 ```powershell
-# 1. Extraire la config par défaut depuis l'image
+# 1. Extract default config from the image
 docker create --name ha-extract-tmp kristofferwagen/ha-instance:latest
 docker cp ha-extract-tmp:/config C:\ha-showcase-config
 docker rm ha-extract-tmp
 
-# 2. Patcher configuration.yaml pour désactiver les modules WSL2-incompatibles
-#    (à faire à la main : remplacer la ligne `default_config:` par la liste
-#     explicite documentée dans configuration.yaml — voir le commit qui a appliqué
-#     ce patch ou regarder les sessions précédentes)
+# 2. Patch configuration.yaml to disable WSL2-incompatible modules
+#    (to be done manually: replace the `default_config:` line with the
+#     explicit list documented in configuration.yaml — see the commit that applied
+#     this patch or look at previous sessions)
 
-# 3. Supprimer l'ancien conteneur s'il existe
+# 3. Delete the old container if it exists
 docker rm -f ha-instance
 
-# 4. Recréer avec bind-mount + restart=no + bridge
+# 4. Recreate with bind-mount + restart=no + bridge
 docker run -d --name ha-instance -p 8123:8123 --network bridge `
   -v C:\ha-showcase-config:/config `
   --restart no `
   kristofferwagen/ha-instance:latest
 
-# 5. Attendre 30-60s puis créer le user (cf. 4.4)
+# 5. Wait 30-60s then create user (cf. 4.4)
 docker exec ha-instance hass --script auth add admin admin
 ```
 
-### 4.6 — `dotnet run` crashe ou le port 8080 est occupé
+### 4.6 — `dotnet run` crashes or port 8080 is occupied
 
 ```powershell
-# Qui occupe le port 8080 ?
+# Who is occupying port 8080?
 Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue `
   | ForEach-Object { Get-Process -Id $_.OwningProcess }
 
-# Tuer un SmartNode fantôme
+# Kill a ghost SmartNode
 Get-Process -Name SmartNode -ErrorAction SilentlyContinue | Stop-Process
 
-# Build vérouillé par un dotnet run précédent
-# → Ctrl+C la fenêtre dotnet run actuelle, puis relance-la
+# Build locked by a previous dotnet run
+# → Ctrl+C the current dotnet run window, then relaunch it
 ```
 
-### 4.7 — Premier `/api/nlu` lent (30-60s)
+### 4.7 — First `/api/nlu` slow (30-60s)
 
-**Cause** : Ollama charge le modèle `qwen2.5-coder:7b` (4.7 GB) en RAM au premier appel.
+**Cause**: Ollama loads the `qwen2.5-coder:7b` model (4.7 GB) into RAM on the first call.
 
-**C'est normal**. Le chatbox a un timeout client de 10 s avec fallback keyword regex, donc la 1re question marche quand même via fallback. À partir de la 2e, c'est instantané (modèle déjà en RAM).
+**This is normal**. The chatbox has a 10 s client timeout with fallback keyword regex, so the 1st question works via fallback anyway. From the 2nd one onwards, it's instant (model already in RAM).
 
-Pour pré-chauffer Ollama avant la démo :
+To warm up Ollama before the demo:
 ```powershell
 ollama run qwen2.5-coder:7b "test" 2>$null
-# Quand le prompt revient, le modèle est en RAM
+# When the prompt returns, the model is in RAM
 ```
 
-### 4.8 — Le chatbox affiche `SmartNode injoignable`
+### 4.8 — Chatbox displays `SmartNode unreachable`
 
 ```powershell
-# 1. Vérifier que SmartNode tourne
+# 1. Verify SmartNode is running
 Invoke-RestMethod http://localhost:8080/api/entities
 
-# 2. Si NOK → relancer dotnet run (cf. 2.4)
+# 2. If NOK → relaunch dotnet run (cf. 2.4)
 
-# 3. Si OK mais le chatbox dit injoignable → CORS ?
-#    Le chatbox lit la fetch via file:// → vérifie qu'il est ouvert avec start
-#    et pas glissé dans un onglet existant.
+# 3. If OK but chatbox says unreachable → CORS?
+#    The chatbox reads the fetch via file:// → verify it is opened with start
+#    and not dragged into an existing tab.
 start C:\dev\ruleless-digital-twins\SmartNode\SmartNode\index.html
 ```
 
 ---
 
-## 5. Arrêt propre
+## 5. Clean Stop
 
 ```powershell
-# Ctrl+C dans la fenêtre dotnet run
+# Ctrl+C in the dotnet run window
 
-# Arrêter les conteneurs (sans les supprimer — données préservées)
+# Stop containers (without deleting them — data preserved)
 docker stop ha-instance
 docker stop jarvis-ollama
-# docker stop mongo-rdt   # si activé
+# docker stop mongo-rdt   # if enabled
 ```
 
-Pour relancer plus tard, reprendre directement à [section 2](#2-lancement-séquentiel).
+To relaunch later, resume directly at [Section 2](#2-lancement-séquentiel).
 
-Si tu as démarré la stack via `docker compose up -d`, l'arrêt symétrique est :
+If you started the stack via `docker compose up -d`, the symmetrical stop is:
 ```powershell
 docker compose -f services/docker-compose.demo.yml down
 ```
 
 ---
 
-## 6. Export Home Assistant → TTL (`tools/hass-to-rdt`)
+## 6. Home Assistant → TTL Export (`tools/hass-to-rdt`)
 
-> Génère/régénère `models-and-rules/homeassistant-instance.ttl` à partir de l'état courant de HA. À faire à chaque fois que tu ajoutes/renommes des entités HA. **Sans cet export à jour, le moteur d'inférence travaille sur un modèle obsolète.**
+> Generates/regenerates `models-and-rules/homeassistant-instance.ttl` from the current HA state. To be done every time you add/rename HA entities. **Without this up-to-date export, the inference engine works on an obsolete model.**
 
-### 6.1 — Setup unique du venv
+### 6.1 — Unique venv setup
 
 ```powershell
 cd C:\dev\ruleless-digital-twins\tools\hass-to-rdt
@@ -501,19 +501,19 @@ python -m venv .venv
 pip install -r requirements-cli.txt
 ```
 
-L'installation pull `homeassistant` (~10 min la première fois — c'est normal, il pull tout l'écosystème HA).
+The installation pulls `homeassistant` (~10 min the first time — this is normal, it pulls the entire HA ecosystem).
 
-### 6.2 — Lancement de l'export
+### 6.2 — Launching the Export
 
-Variables nécessaires (déjà couvertes en §1bis.2) :
+Necessary variables (already covered in §1bis.2):
 
 ```powershell
-$env:TOKEN_HA      # token long-lived HA
+$env:TOKEN_HA      # HA long-lived token
 $env:HA_URL        = "http://localhost:8123/api/"
 $env:RDT_NAMESPACE = "http://www.semanticweb.org/rayan/ontologies/2025/ha/"
 ```
 
-> ⚠️ Le second argument `TOKEN_HA` est le **nom** de la variable, pas la valeur du token. C'est `hacvt_rdt.py` qui ira lire l'env var.
+> ⚠️ The second argument `TOKEN_HA` is the **name** of the variable, not the token value. It is `hacvt_rdt.py` that will read the env var.
 
 ```powershell
 cd C:\dev\ruleless-digital-twins\tools\hass-to-rdt
@@ -523,20 +523,20 @@ python hacvt_rdt.py $env:HA_URL TOKEN_HA `
     --out ..\..\models-and-rules\homeassistant-instance.ttl
 ```
 
-Sortie attendue : un `.ttl` à jour avec toutes les entités HA mappées sur SOSA/SSN + `rdt:hasIdentifier`. Le prochain cycle MAPE-K (le SmartNode reload le modèle à chaque cycle) prendra automatiquement la nouvelle version.
+Expected output: an up-to-date `.ttl` with all HA entities mapped to SOSA/SSN + `rdt:hasIdentifier`. The next MAPE-K cycle (SmartNode reloads the model every cycle) will automatically pick up the new version.
 
-### 6.3 — Vérification rapide
+### 6.3 — Quick Verification
 
 ```powershell
 Get-Content ..\..\models-and-rules\homeassistant-instance.ttl | Select-String "rdt:hasIdentifier" | Measure-Object
-# nombre attendu = nombre d'entités HA exposées
+# expected number = number of exposed HA entities
 ```
 
 ---
 
-## Récap visuel — séquence minimale qui marche
+## Visual Recap — minimal sequence that works
 
-Variante compose (clone propre) :
+Compose variant (clean clone):
 ```
 git submodule update --init --recursive
 docker compose -f services/docker-compose.demo.yml up -d
@@ -545,7 +545,7 @@ cd SmartNode\SmartNode && dotnet run
 start .\index.html
 ```
 
-Variante manuelle (containers déjà créés) :
+Manual variant (containers already created):
 ```
 docker start ha-instance
 docker start jarvis-ollama
@@ -556,15 +556,15 @@ dotnet run
 start .\index.html
 ```
 
-Si une étape échoue → consulter la section 4 correspondante.
+If any step fails → consult the corresponding Section 4.
 
 ---
 
 ---
 
-## 7. Moteur d'inférence en standalone (moment fort démo)
+## 7. Standalone Inference Engine (demo highlight)
 
-> Exécuter **avant** de lancer SmartNode pour avoir un `.ttl` inféré frais à montrer.
+> Execute **before** launching SmartNode to have a fresh inferred `.ttl` to show.
 
 ```powershell
 cd models-and-rules
@@ -575,16 +575,16 @@ java -jar ruleless-digital-twins-inference-engine.jar `
      homeassistant-ha-inferred-DEMO.ttl
 ```
 
-Comparer les tailles (la valeur ajoutée du raisonnement est visible en bytes) :
+Compare sizes (the value added by reasoning is visible in bytes):
 
 ```powershell
-"{0} bytes — instance (entrée)" -f (Get-Item homeassistant-ha-instance.ttl).Length
-"{0} bytes — inféré (sortie)"   -f (Get-Item homeassistant-ha-inferred-DEMO.ttl).Length
+"{0} bytes — instance (input)" -f (Get-Item homeassistant-ha-instance.ttl).Length
+"{0} bytes — inferred (output)"   -f (Get-Item homeassistant-ha-inferred-DEMO.ttl).Length
 ```
 
-Pointer dans VS Code :
-- `homeassistant-ha-instance.ttl` : données brutes, pas de violations calculées
-- `homeassistant-ha-inferred-DEMO.ttl` : triplets inférés, chercher `meta:isViolated`
+Point out in VS Code:
+- `homeassistant-ha-instance.ttl`: raw data, no calculated violations
+- `homeassistant-ha-inferred-DEMO.ttl`: inferred triples, look for `meta:isViolated`
 
 ```powershell
 Select-String -Path homeassistant-ha-inferred-DEMO.ttl -Pattern "isViolated"
@@ -592,63 +592,63 @@ Select-String -Path homeassistant-ha-inferred-DEMO.ttl -Pattern "isViolated"
 
 ---
 
-## 8. Scénario démo live (script 5 phrases)
+## 8. Live Demo Scenario (5-phrase script)
 
-> **Conseil économies** : lancer le scénario le **matin** (avant 10h) avec la deadline 7h du lendemain.
-> Cela donne ~21h de fenêtre → les prix Nord Pool varient davantage → **10-20 % d'économies** affichées
-> au lieu de 2-4 % si on lance l'après-midi avec 4h restantes.
+> **Savings tip**: launch the scenario in the **morning** (before 10am) with a 7am deadline the next day.
+> This gives a ~21h window → Nord Pool prices vary more → **10-20% savings** displayed
+> instead of 2-4% if launched in the afternoon with 4h remaining.
 
-| # | Phrase à taper dans le chatbox | Ce que ça montre |
+| # | Phrase to type in chatbox | What it shows |
 |---|-------------------------------|-----------------|
-| 1 | `quelle est la température du salon ?` | NLU + query HA en direct |
-| 2 | `allume la lumière de la cuisine` | Actuateur réel → toggle visible dans HA Lovelace |
-| 3 | `mets la température à 23 degrés` | InputNumber actuator → curseur HA bouge |
-| 4 | `quel est le statut de la maison ?` | Dashboard complet (temp + puissance + AQI + lumières) |
-| 5 | `charge la Tesla à 100 % pour 7h du matin` | Optimisation Nord Pool + barre 24h + % économies |
+| 1 | `what is the living room temperature?` | NLU + live HA query |
+| 2 | `turn on the kitchen light` | Real actuator → toggle visible in HA Lovelace |
+| 3 | `set the temperature to 23 degrees` | InputNumber actuator → HA slider moves |
+| 4 | `what is the house status?` | Full dashboard (temp + power + AQI + lights) |
+| 5 | `charge the Tesla to 100% by 7am` | Nord Pool optimization + 24h bar + % savings |
 
-Après la phrase 5 :
-1. Cliquer **▶ Exécuter** → le bandeau `⏱ SCHEDULES` apparaît
-2. `input_boolean.showcase_car_charger` toggle dans HA toutes les 60 s (mode démo : 1h = 1 min)
-3. Cliquer ✕ sur le schedule pour le annuler → statut `cancelled` visible dans le bandeau
+After phrase 5:
+1. Click **▶ Execute** → the `⏱ SCHEDULES` banner appears
+2. `input_boolean.showcase_car_charger` toggles in HA every 60 s (demo mode: 1h = 1 min)
+3. Click ✕ on the schedule to cancel it → `cancelled` status visible in the banner
 
-Si le bandeau proactif 🔥 est visible : expliquer l'advisory proactif en bonus.
+If the proactive 🔥 banner is visible: explain the proactive advisory as a bonus.
 
 ### Known demo gotchas
 
-| Symptôme | Cause | Remède |
+| Symptom | Cause | Remedy |
 |----------|-------|--------|
-| `FileNotFoundException: Properties\appsettings.json` | Working directory ≠ projet SmartNode | Patch appliqué dans `Program.cs` : `appsettings.json` est résolu via le dossier de l'assembly. `dotnet run --project SmartNode/SmartNode/SmartNode.csproj` fonctionne maintenant depuis n'importe quel CWD. |
-| Économies < 5% sur la charge Tesla | Fenêtre d'optimisation trop courte (n'inclut pas les heures creuses de nuit) | Lancer la charge **le matin** (avant 10h) avec deadline `7h le lendemain` → fenêtre 21h qui inclut les prix nocturnes (~0.99 NOK/kWh vs ~1.20 en pointe). |
-| `[OPTIMIZE] windowBuckets=6` ou moins | Nord Pool retourne des slots 15-min, ancien code prenait `Take(24)` = 6h | Patch appliqué dans `NordPoolForecastProvider.cs` : `Take(horizon)` remplacé par filtre temporel `s.Start < nowLocal.AddHours(horizon)`. Vérifier dans le terminal SmartNode : `[OPTIMIZE] rawSlots=192 hourlyBuckets=48 windowBuckets=15...`. |
-| `NordPool: ... area=NO5 not found in response` | Home Assistant retourne `"no5"` (lowercase) au lieu de `"NO5"` | Patch appliqué dans `NordPoolForecastProvider.cs` : lookup case-insensitive. Si l'erreur revient, l'aire HA réelle est loggée dans le body de la réponse. |
-| Schedule disparaît après restart | OK avant le patch — était volatile | Patch appliqué : `state-data/schedules.json` est sauvegardé après chaque création/completion/cancel. Au restart, les `running` deviennent `interrupted`. |
-| `MAPE-K loop failed — HTTP API continues` | HA injoignable mais SmartNode tourne | Vérifier `docker ps` (conteneur `ha-instance` up + port 8123) puis attendre le prochain cycle (60 s). |
-| Chatbox dit *SmartNode unreachable* | Port 8080 occupé ou SmartNode crashé | `netstat -ano | findstr :8080` puis Ctrl+C dans la fenêtre `dotnet run` et relancer. |
+| `FileNotFoundException: Properties\appsettings.json` | Working directory ≠ SmartNode project | Patch applied in `Program.cs`: `appsettings.json` is resolved via the assembly folder. `dotnet run --project SmartNode/SmartNode/SmartNode.csproj` now works from any CWD. |
+| Savings < 5% on Tesla charge | Optimization window too short (does not include night off-peak hours) | Launch charge **in the morning** (before 10am) with `7am tomorrow` deadline → 21h window including night prices (~0.99 NOK/kWh vs ~1.20 peak). |
+| `[OPTIMIZE] windowBuckets=6` or less | Nord Pool returns 15-min slots, old code took `Take(24)` = 6h | Patch applied in `NordPoolForecastProvider.cs`: `Take(horizon)` replaced by time filter `s.Start < nowLocal.AddHours(horizon)`. Verify in SmartNode terminal: `[OPTIMIZE] rawSlots=192 hourlyBuckets=48 windowBuckets=15...`. |
+| `NordPool: ... area=NO5 not found in response` | Home Assistant returns `"no5"` (lowercase) instead of `"NO5"` | Patch applied in `NordPoolForecastProvider.cs`: case-insensitive lookup. If error returns, real HA area is logged in response body. |
+| Schedule disappears after restart | OK before patch — was volatile | Patch applied: `state-data/schedules.json` is saved after each creation/completion/cancel. At restart, `running` becomes `interrupted`. |
+| `MAPE-K loop failed — HTTP API continues` | HA unreachable but SmartNode runs | Verify `docker ps` (`ha-instance` container up + port 8123) then wait for next cycle (60 s). |
+| Chatbox says *SmartNode unreachable* | Port 8080 occupied or SmartNode crashed | `netstat -ano | findstr :8080` then Ctrl+C in `dotnet run` window and relaunch. |
 
-> **Sur les économies Nord Pool** : les prix réels varient chaque jour. La démo ne vise pas un nombre fixe à 20%. La preuve importante est que l'optimizer sélectionne des fenêtres futures moins chères et reporte les économies à la fois vs *window-average* et vs *peak-hours baseline*.
+> **On Nord Pool savings**: real prices vary every day. The demo does not aim for a fixed 20% number. The important proof is that the optimizer selects cheaper future windows and reports savings both vs *window-average* and vs *peak-hours baseline*.
 >
-> **Honnêteté de la démo Tesla / EV** : le scénario d'optimisation EV utilise les **prix Nord Pool live de Home Assistant** (vérifiable via la ligne *Price source* de la carte optimizer + log `[OPTIMIZE] priceSource=homeassistant_nordpool`), mais le **chargeur est un actuateur démo configuré** (`CarCharger`, 11 kW × 4 h par défaut). Aucune vraie entité Tesla (SOC, plugged/unplugged, puissance réelle) n'est lue à ce stade — le même mécanisme se branche sur une vraie entité HA charger/Tesla en remplaçant la cible. Si HA/Nord Pool est indisponible, l'optimizer **refuse de répondre** plutôt que de retomber sur des prix simulés (la carte affiche `Live Nord Pool forecast unavailable — optimization not launched`).
+> **Tesla / EV demo honesty**: the EV optimization scenario uses **live Nord Pool prices from Home Assistant** (verifiable via the *Price source* line on the optimizer card + log `[OPTIMIZE] priceSource=homeassistant_nordpool`), but the **charger is a configured demo actuator** (`CarCharger`, 11 kW × 4 h by default). No real Tesla entity (SOC, plugged/unplugged, real power) is read at this stage — the same mechanism plugs into a real HA charger/Tesla entity by replacing the target. If HA/Nord Pool is unavailable, the optimizer **refuses to respond** rather than falling back to simulated prices (the card displays `Live Nord Pool forecast unavailable — optimization not launched`).
 
-### Logs à surveiller pendant la démo
+### Logs to monitor during demo
 
-| Log | Phase | Fichier source |
+| Log | Phase | Source file |
 |-----|-------|----------------|
-| `Generated ActuationAction` | Plan (inférence Java) | sortie JAR |
+| `Generated ActuationAction` | Plan (Java inference) | JAR output |
 | `Running simulation #N` | Plan (FMU look-ahead) | `Logic/Mapek/MapekPlan.cs` |
 | `NordPool: 2026-XX-XX → 96 slots added` | Forecast | `NordPoolForecastProvider.cs` |
 | `[OPTIMIZE] rawSlots=192 hourlyBuckets=48 windowBuckets=15 ... cheapest3=04:00@0.9954, ...` | Optimize endpoint | `Program.cs` |
 | `[SCHEDULE <id>] h=0 → ON (CarCharger)` | Execute schedule | `ScheduleManager.cs` |
 
-### Questions probables du jury
+### Likely jury questions
 
-| Question | Réponse courte |
+| Question | Short answer |
 |----------|----------------|
-| *Pourquoi pas des règles fixes ?* | Flexibilité : nouvelles entités HA = 0 ligne de code ; le raisonnement s'adapte |
-| *Comment scale à 300 entités ?* | Registry dynamique HA déjà câblé ; l'ontologie est générique SOSA/SSN |
-| *Sécurité du token HA ?* | Variable d'env, jamais committé, scope long-lived |
-| *Pourquoi Ollama local ?* | Privacy + latence + offline + 0 coût par token |
-| *Que se passe-t-il si HA tombe ?* | MAPE-K cycle fail → log + retry automatique au cycle suivant (implémenté dans MapekManager) |
+| *Why not fixed rules?* | Flexibility: new HA entities = 0 lines of code; reasoning adapts |
+| *How to scale to 300 entities?* | Dynamic HA registry already wired; SOSA/SSN ontology is generic |
+| *HA token security?* | Env variable, never committed, long-lived scope |
+| *Why local Ollama?* | Privacy + latency + offline + 0 cost per token |
+| *What happens if HA goes down?* | MAPE-K cycle fail → log + automatic retry next cycle (implemented in MapekManager) |
 
 ---
 
-*Dernière mise à jour : 2026-04-28.*
+*Last updated: 2026-04-28.*

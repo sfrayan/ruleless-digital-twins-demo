@@ -1,152 +1,152 @@
-# ROADMAP — Démo Ruleless Digital Twins
+# ROADMAP — Ruleless Digital Twins Demo
 
-> Plan d'action pour transformer ce repo en démo end-to-end exploitable en live.
-> **Cible** : soutenance stage Volker Stolz — semaine du **5 mai 2026**.
-> **Composants à montrer** : simulation FMU · moteur d'inférence Jena · données stockées · visualisation simple.
+> Action plan to transform this repo into an end-to-end live demo.
+> **Target**: Volker Stolz internship defense — week of **May 5, 2026**.
+> **Components to show**: FMU simulation · Jena inference engine · stored data · simple visualization.
 >
-> Ce document complète [readme.md](readme.md) qui couvre l'architecture théorique. Ici on parle uniquement de l'**exécution** d'une démo reproductible.
+> This document complements [readme.md](readme.md) which covers the theoretical architecture. Here we speak only of the **execution** of a reproducible demo.
 
 ---
 
-## Sommaire
+## Table of Contents
 
-- [État actuel](#état-actuel)
-- [Architecture cible de la démo](#architecture-cible-de-la-démo)
-- [Phase 0 — Préparation](#phase-0--préparation-j-3-à-j-2)
-- [Phase 1 — Stabilisation environnement](#phase-1--stabilisation-environnement-j-2)
-- [Phase 2 — Activer les 4 composants](#phase-2--activer-les-4-composants-j-1)
-- [Phase 3 — Préparation soutenance](#phase-3--préparation-soutenance-j)
-- [Phase 4 — Optionnel post-soutenance](#phase-4--optionnel-post-soutenance)
+- [Current Status](#current-status)
+- [Demo Target Architecture](#demo-target-architecture)
+- [Phase 0 — Preparation](#phase-0--preparation-j-3-à-j-2)
+- [Phase 1 — Environment Stabilization](#phase-1--stabilisation-environnement-j-2)
+- [Phase 2 — Activate the 4 Components](#phase-2--activer-les-4-composants-j-1)
+- [Phase 3 — Defense Preparation](#phase-3--préparation-soutenance-j)
+- [Phase 4 — Optional Post-Defense](#phase-4--optionnel-post-soutenance)
 - [Quick-start](#quick-start)
-- [Critères de succès](#critères-de-succès-démo)
-- [Annexes](#annexes)
+- [Success Criteria](#success-criteria-démo)
+- [Appendices](#annexes)
 
 ---
 
-## État actuel
+## Current Status
 
-### ✅ Ce qui fonctionne déjà
+### ✅ What is already working
 
-| Composant | Statut | Localisation |
+| Component | Status | Location |
 |---|---|---|
-| Boucle MAPE-K complète | ✅ | `SmartNode/Logic/Mapek/` (Manager + Monitor + Analyze + Plan + Execute + Knowledge) |
-| Ontologie SOSA/SSN + extensions RDT | ✅ | `ontology/ruleless-digital-twins.ttl` |
+| Complete MAPE-K loop | ✅ | `SmartNode/Logic/Mapek/` (Manager + Monitor + Analyze + Plan + Execute + Knowledge) |
+| SOSA/SSN ontology + RDT extensions | ✅ | `ontology/ruleless-digital-twins.ttl` |
 | Inference engine (Apache Jena 5.3.0) | ✅ | `models-and-rules/ruleless-digital-twins-inference-engine.jar` (15 MB) |
-| Règles Jena | ✅ | `models-and-rules/inference-rules.rules` (459 l.) + `verification-rules.rules` (549 l.) |
-| Modèles d'instance | ✅ | `instance-model-1/2.ttl`, `M370.ttl`, `homeassistant-ha-instance.ttl`, `nordpool-simple.ttl` |
-| Simulation physique FMU | ✅ | `SmartNode/Implementations/FMUs/` (m370, incubator) — chargés via Femyou |
-| Intégration Home Assistant | ✅ | REST + 4 kinds d'actuateurs (Light, Switch, InputBoolean, InputNumber) |
-| API HTTP SmartNode (chatbox) | ✅ | port 8080, 13 endpoints (cf. [annexes](#annexes)) |
-| Chatbox web | ✅ | `SmartNode/SmartNode/index.html` — dashboard, NLU, scheduler UI |
-| NLU dynamique | ✅ | Ollama `qwen2.5-coder:7b` + registry HA injecté dans le prompt + fallback keyword |
-| Scheduler in-memory | ✅ | `SmartNode/SmartNode/ScheduleManager.cs` — plans 24h, mode démo 1h=60s |
-| Optimisation prix | ✅ | `/api/optimize` — picks N cheapest hours avant deadline |
-| Tests | ✅ | `SmartNode/TestProject/` — 9 fichiers xUnit (Mapek, Inference, HA, FMU, NordPool…) |
+| Jena Rules | ✅ | `models-and-rules/inference-rules.rules` (459 l.) + `verification-rules.rules` (549 l.) |
+| Instance models | ✅ | `instance-model-1/2.ttl`, `M370.ttl`, `homeassistant-ha-instance.ttl`, `nordpool-simple.ttl` |
+| FMU physical simulation | ✅ | `SmartNode/Implementations/FMUs/` (m370, incubator) — loaded via Femyou |
+| Home Assistant integration | ✅ | REST + 4 types of actuators (Light, Switch, InputBoolean, InputNumber) |
+| SmartNode HTTP API (chatbox) | ✅ | port 8080, 13 endpoints (cf. [appendices](#annexes)) |
+| Web Chatbox | ✅ | `SmartNode/SmartNode/index.html` — dashboard, NLU, scheduler UI |
+| Dynamic NLU | ✅ | Ollama `qwen2.5-coder:7b` + HA registry injected into prompt + keyword fallback |
+| In-memory Scheduler | ✅ | `SmartNode/SmartNode/ScheduleManager.cs` — 24h plans, demo mode 1h=60s |
+| Price Optimization | ✅ | `/api/optimize` — picks N cheapest hours before deadline |
+| Tests | ✅ | `SmartNode/TestProject/` — 9 xUnit files (Mapek, Inference, HA, FMU, NordPool…) |
 
-### ⚠️ Ce qui manque pour une démo crédible
+### ⚠️ What is missing for a credible demo
 
-| Manque | Impact démo | Effort |
+| Missing | Demo Impact | Effort |
 |---|---|---|
-| Setup réplicable documenté | Si HA crash le jour J, panique en live | XS |
-| Données prix réalistes (pas de FakepoolSensor plat) | Économies affichées ≈ 2-4 % seulement, peu impressionnant | S |
-| Persistence visible des cycles MAPE-K | Pas d'illustration concrète du « digital twin stocke son histoire » | XS |
-| Scénarios de démo scriptés | Risque de bafouiller en live | S |
-| Slides | Tâche #3 de `Faire.md` toujours ouverte | M |
-| Inferred model exhibable | Le `.ttl` inféré tourne en RAM mais on ne le montre jamais | XS |
+| Documented replicable setup | If HA crashes on the day, panic live | XS |
+| Realistic price data (not flat FakepoolSensor) | Displayed savings ≈ 2-4% only, not very impressive | S |
+| Visible MAPE-K cycle persistence | No concrete illustration of "digital twin stores its history" | XS |
+| Scripted demo scenarios | Risk of stuttering live | S |
+| Slides | Task #3 of `Faire.md` still open | M |
+| Exhibitable inferred model | The inferred `.ttl` runs in RAM but we never show it | XS |
 
 ---
 
-## Architecture cible de la démo
+## Demo Target Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                         SOUTENANCE — DÉMO LIVE                        │
+│                         DEFENSE — LIVE DEMO                          │
 └──────────────────────────────────────────────────────────────────────┘
 
-   [1] CHATBOX (browser)                         [2] HOME ASSISTANT
-   ┌───────────────────┐                        ┌──────────────────┐
-   │ Dashboard live    │                        │ Lovelace UI      │
-   │ + 6 quick chips   │     "allume salon"     │ Switches react   │
-   │ + plans 24h       │   ───────────────────> │ en direct        │
-   │ + barre énergie   │                        │ (port :8123)     │
-   └───────────────────┘                        └──────────────────┘
-            │                                            ▲
-            │                                            │ REST
-            ▼ HTTP :8080                                 │
-   ┌────────────────────────────────────────────────────┴───────────┐
-   │                  SmartNode (.NET 8)                             │
-   │                                                                 │
-   │   [3] INFERENCE ENGINE              [4] SIMULATION             │
-   │   ┌─────────────────────┐           ┌────────────────────┐     │
-   │   │ Apache Jena (JAR)   │           │ Femyou + FMU       │     │
-   │   │ instance.ttl        │           │ Modelica plant     │     │
-   │   │  + rules.rules      │           │ N steps look-ahead │     │
-   │   │  → inferred.ttl     │           │ → fitness Energy×€ │     │
-   │   └─────────────────────┘           └────────────────────┘     │
-   │                                                                 │
-   │   [5] DONNÉES STOCKÉES                                         │
-   │   ┌─────────────────────┐                                      │
-   │   │ state-data/cycle-*  │  (SaveMapekCycleData=true)           │
-   │   │ + MongoDB cases     │  (UseCaseBasedFunctionality=true)    │
-   │   └─────────────────────┘                                      │
-   │                                                                 │
-   │   [6] NLU                                                       │
-   │   Ollama qwen2.5-coder:7b (port 11434)                         │
-   └─────────────────────────────────────────────────────────────────┘
+    [1] CHATBOX (browser)                         [2] HOME ASSISTANT
+    ┌───────────────────┐                        ┌──────────────────┐
+    │ Live Dashboard    │                        │ Lovelace UI      │
+    │ + 6 quick chips   │     "turn on living"   │ Switches react   │
+    │ + 24h plans       │   ───────────────────> │ in real time     │
+    │ + energy bar      │                        │ (port :8123)     │
+    └───────────────────┘                        └──────────────────┘
+             │                                            ▲
+             │                                            │ REST
+             ▼ HTTP :8080                                 │
+    ┌────────────────────────────────────────────────────┴───────────┐
+    │                  SmartNode (.NET 8)                             │
+    │                                                                 │
+    │   [3] INFERENCE ENGINE              [4] SIMULATION             │
+    │   ┌─────────────────────┐           ┌────────────────────┐     │
+    │   │ Apache Jena (JAR)   │           │ Femyou + FMU       │     │
+    │   │ instance.ttl        │           │ Modelica plant     │     │
+    │   │  + rules.rules      │           │ N steps look-ahead │     │
+    │   │  → inferred.ttl     │           │ → Energy×€ fitness │     │
+    │   └─────────────────────┘           └────────────────────┘     │
+    │                                                                 │
+    │   [5] STORED DATA                                              │
+    │   ┌─────────────────────┐                                      │
+    │   │ state-data/cycle-*  │  (SaveMapekCycleData=true)           │
+    │   │ + MongoDB cases     │  (UseCaseBasedFunctionality=true)    │
+    │   └─────────────────────┘                                      │
+    │                                                                 │
+    │   [6] NLU                                                       │
+    │   Ollama qwen2.5-coder:7b (port 11434)                         │
+    └─────────────────────────────────────────────────────────────────┘
 ```
 
-Les 4 composants à mettre en avant pendant la démo :
-1. **Simulation** → FMU exécutée pendant la phase Plan (logs visibles dans le terminal SmartNode)
-2. **Inference engine** → JAR exécuté à chaque cycle Knowledge (montrer un fichier inferred TTL avant/après)
-3. **Données stockées** → fichiers JSON dans `state-data/` + entrées MongoDB (optionnel)
-4. **Visualisation** → chatbox + lovelace HA en parallèle
+The 4 components to highlight during the demo:
+1. **Simulation** → FMU executed during the Plan phase (logs visible in the SmartNode terminal)
+2. **Inference engine** → JAR executed at each Knowledge cycle (show an inferred TTL file before/after)
+3. **Stored data** → JSON files in `state-data/` + MongoDB entries (optional)
+4. **Visualization** → chatbox + HA lovelace in parallel
 
 ---
 
-## Phase 0 — Préparation (J-3 à J-2)
+## Phase 0 — Preparation (D-3 to D-2)
 
-> *Ne touche à rien dans le code. Inventaire et préparation des artefacts.*
+> *Do not touch code. Inventory and preparation of artifacts.*
 
-- [ ] **0.1** Cloner le repo dans un dossier *propre* (`C:\demo\ruleless-digital-twins`) pour éviter le bruit des sessions de dev.
-- [ ] **0.2** Vérifier que les fichiers démo critiques existent et ne sont pas corrompus :
+- [ ] **0.1** Clone the repo into a *clean* folder (`C:\demo\ruleless-digital-twins`) to avoid noise from dev sessions.
+- [ ] **0.2** Verify that critical demo files exist and are not corrupted:
   - `models-and-rules/ruleless-digital-twins-inference-engine.jar` (≈ 15 MB)
-  - `models-and-rules/instance-model-1.ttl` et `inferred-model-1.ttl`
-  - `models-and-rules/inference-rules.rules` et `verification-rules.rules`
+  - `models-and-rules/instance-model-1.ttl` and `inferred-model-1.ttl`
+  - `models-and-rules/inference-rules.rules` and `verification-rules.rules`
   - `ontology/ruleless-digital-twins.ttl`
-  - `SmartNode/Implementations/FMUs/*.fmu` (au moins 1 FMU compilé)
-- [ ] **0.3** Vérifier les services externes installés :
+  - `SmartNode/Implementations/FMUs/*.fmu` (at least 1 compiled FMU)
+- [ ] **0.3** Verify installed external services:
   - `docker --version`, `docker ps` (Docker Desktop OK)
   - `dotnet --info` ≥ 8.0
   - `java -version` ≥ 11
-  - `ollama list` contient `qwen2.5-coder:7b`
-- [ ] **0.4** Backup `C:\ha-showcase-config\` (admin user + token + helpers déjà créés) :
+  - `ollama list` contains `qwen2.5-coder:7b`
+- [ ] **0.4** Backup `C:\ha-showcase-config\` (admin user + token + helpers already created):
   ```powershell
   Compress-Archive -Path C:\ha-showcase-config\* `
     -DestinationPath C:\demo\ha-showcase-config-backup.zip
   ```
-- [ ] **0.5** Sauvegarder le token long-lived HA dans un coffre-fort (1Password, fichier chiffré local…) pour pouvoir le remettre en `$env:TOKEN_HA` en moins de 30s.
+- [ ] **0.5** Save the HA long-lived token in a vault (1Password, local encrypted file…) to be able to put it back in `$env:TOKEN_HA` in less than 30s.
 
 ---
 
-## Phase 1 — Stabilisation environnement (J-2)
+## Phase 1 — Environment Stabilization (D-2)
 
-> *Garantir que la séquence de lancement marche du premier coup, à froid.*
+> *Ensure that the launch sequence works the first time, from cold.*
 
-- [ ] **1.1** Test à blanc : reboot complet de la machine, puis exécuter le [quick-start](#quick-start) sans rien éditer. Tout doit fonctionner en < 5 min.
-- [ ] **1.2** Documenter dans [DEMO_SETUP.md](#annexes) (à créer en Phase 3) :
-  - L'ordre exact des `docker start`
-  - Comment récupérer si `ha-instance` n'a pas d'eth0 (`docker network connect bridge ha-instance`)
-  - Comment recréer le user admin si auth perdu (`docker exec ha-instance hass --script auth add admin admin`)
-  - Comment relancer si Ollama n'est pas chargé (premier appel de 30-60s)
-- [ ] **1.3** Activer la persistance MAPE-K pour la démo. Éditer **uniquement la config** (pas de code) :
+- [ ] **1.1** Dry run: complete machine reboot, then execute [quick-start](#quick-start) without editing anything. Everything must work in < 5 min.
+- [ ] **1.2** Document in [DEMO_SETUP.md](#annexes) (to be created in Phase 3):
+  - Exact order of `docker start`
+  - How to recover if `ha-instance` has no eth0 (`docker network connect bridge ha-instance`)
+  - How to recreate the admin user if auth is lost (`docker exec ha-instance hass --script auth add admin admin`)
+  - How to relaunch if Ollama is not loaded (first call 30-60s)
+- [ ] **1.3** Activate MAPE-K persistence for the demo. Edit **only the config** (no code):
   - `SmartNode/SmartNode/Properties/appsettings.json`
-  - Mettre `"SaveMapekCycleData": true`
-  - Le dossier `state-data/` se remplira de fichiers JSON par cycle
-- [ ] **1.4** *(Optionnel)* Activer le case-based reasoning pour montrer MongoDB :
-  - Démarrer un MongoDB local : `docker run -d --name mongo-rdt -p 27017:27017 mongo:latest`
-  - Mettre `"UseCaseBasedFunctionality": true` dans `appsettings.json`
-  - Sinon, sauter cette case et se contenter de `state-data/`
-- [ ] **1.5** Tester le JAR d'inférence en standalone (montrable directement en démo) :
+  - Set `"SaveMapekCycleData": true`
+  - The `state-data/` folder will fill with JSON files per cycle
+- [ ] **1.4** *(Optional)* Activate case-based reasoning to show MongoDB:
+  - Start a local MongoDB: `docker run -d --name mongo-rdt -p 27017:27017 mongo:latest`
+  - Set `"UseCaseBasedFunctionality": true` in `appsettings.json`
+  - Otherwise, skip this and settle for `state-data/`
+- [ ] **1.5** Test the inference JAR in standalone (showable directly in demo):
   ```powershell
   cd C:\dev\ruleless-digital-twins\models-and-rules
   java -jar ruleless-digital-twins-inference-engine.jar `
@@ -155,190 +155,190 @@ Les 4 composants à mettre en avant pendant la démo :
        inference-rules.rules `
        homeassistant-ha-inferred-DEMO.ttl
   ```
-  Comparer les tailles `instance` (avant) vs `inferred` (après) — ça montre la valeur ajoutée du raisonnement.
+  Compare `instance` (before) vs `inferred` (after) sizes — this shows the added value of reasoning.
 
 ---
 
-## Phase 2 — Activer les 4 composants (J-1)
+## Phase 2 — Activate the 4 Components (D-1)
 
-> *Pour chaque composant, prévoir 1 « moment fort » où il est rendu visible au jury.*
+> *For each component, plan 1 "highlight" moment where it is made visible to the jury.*
 
-### 2.1 — Simulation FMU
-- [ ] Confirmer que `appsettings.json` pointe sur l'environnement choisi (`"Environment": "homeassistant"`).
-- [ ] Lancer `dotnet run` et **identifier dans les logs** la phase Plan : on doit voir `Running simulation #1`, `Parameters: ...`, `New values: ...`. C'est le FMU qui projette les futurs N cycles.
-- [ ] Préparer une capture de terminal montrant 5-6 simulations consécutives → à montrer en slide ou en live.
+### 2.1 — FMU Simulation
+- [ ] Confirm `appsettings.json` points to chosen environment (`"Environment": "homeassistant"`).
+- [ ] Launch `dotnet run` and **identify in logs** the Plan phase: we should see `Running simulation #1`, `Parameters: ...`, `New values: ...`. This is the FMU projecting future N cycles.
+- [ ] Prepare a terminal capture showing 5-6 consecutive simulations → show in slide or live.
 
-### 2.2 — Inference engine
-- [ ] Faire tourner le JAR manuellement (commande de la phase 1.5) **avant** de lancer SmartNode → on a un `.ttl` inféré frais à exhiber.
-- [ ] Ouvrir `homeassistant-ha-inferred-DEMO.ttl` dans VS Code → mettre en évidence quelques triplets dérivés (par exemple les `meta:isViolated true` produits par les règles de vérification).
-- [ ] *Bonus* : créer une slide « Avant / Après » avec une portion du `.ttl` instance (sans inférence) vs `.ttl` inferred (avec règles appliquées).
+### 2.2 — Inference Engine
+- [ ] Run the JAR manually (Phase 1.5 command) **before** launching SmartNode → have a fresh inferred `.ttl` to exhibit.
+- [ ] Open `homeassistant-ha-inferred-DEMO.ttl` in VS Code → highlight some derived triples (e.g. `meta:isViolated true` produced by verification rules).
+- [ ] *Bonus*: create a "Before / After" slide with a portion of the instance `.ttl` (no inference) vs inferred `.ttl` (rules applied).
 
-### 2.3 — Données stockées
-- [ ] Pendant que SmartNode tourne (10-20 cycles), montrer le contenu de `state-data/` qui se remplit.
-- [ ] *Si MongoDB activé* : ouvrir MongoDB Compass ou `mongosh` :
+### 2.3 — Stored Data
+- [ ] While SmartNode runs (10-20 cycles), show `state-data/` filling up.
+- [ ] *If MongoDB activated*: open MongoDB Compass or `mongosh`:
   ```
   mongosh "mongodb://localhost:27017"
   use CaseBase
   db.Cases.countDocuments()
   db.Cases.findOne()
   ```
-- [ ] Préparer une capture des deux types de stockage (fichiers JSON + collection Mongo).
+- [ ] Prepare a capture of both storage types (JSON files + Mongo collection).
 
-### 2.4 — Visualisation
-- [ ] Mettre côte à côte sur l'écran :
-  - **Browser tab 1** : `index.html` du chatbox (dashboard + chips + bandeau plannings).
-  - **Browser tab 2** : `localhost:8123` HA Lovelace (Direct Controls + Sensors + Environment Inputs).
-- [ ] Préparer le « scénario » live :
-  1. *« Quelle est la température du salon ? »* → réponse chatbox + match HA dashboard.
-  2. *« Allume la lumière de la cuisine. »* → toggle visible dans HA en temps réel.
-  3. *« Mets la température à 23 degrés. »* → curseur HA bouge instantanément (via `InputNumber` actuator).
-  4. *« Charge la voiture à 100 % pour 7 h du matin. »* → barre 24 h apparaît, `Économie : N %`, bouton « ▶ Exécuter » → bandeau live et `input_boolean.showcase_car_charger` toggle dans HA.
-  5. *« Active la scène nuit. »* → test du NLU dynamique via `/api/call_service` (la chatbox connaît toutes les entités HA).
-
----
-
-## Phase 3 — Préparation soutenance (J)
-
-- [ ] **3.1** Slides (5 slides, 7-10 min total) :
-  1. **Contexte & objectifs** : CPS, jumeaux numériques *ruleless* (vs règles fixes), MAPE-K, FMU, ontologie OWL.
-  2. **Cahier des charges** : pilotage énergétique (chauffage / charge VE) sous contraintes (confort + budget + heures creuses).
-  3. **Réalisations** : `hacvt_rdt.py` (export HA → OWL), chatbox NLU, scheduler optimisé, fitness Energy × Price, intégration HA via REST.
-  4. **Démo live** (3-4 min) : 5 phrases au chatbox, montrer HA réagir, montrer un plan 24 h optimisé.
-  5. **Conclusion & perspectives** : prix NordPool réels, multi-foyers, intégration smart-meter, persistance horizontale (Influx).
-- [ ] **3.2** Captures de l'architecture (drawio → PNG/SVG) à inclure dans les slides :
-  - `Diagrams/framework_architecture.drawio` → exporter en PNG.
-  - `Diagrams/inference_algorithm_phase_1.drawio` et `..._phase_2.drawio` pour expliquer le raisonnement.
-- [ ] **3.3** Créer un fichier **`DEMO_SETUP.md`** à la racine du repo, contenant :
-  - Les commandes du [Quick-start](#quick-start) sous forme copy-paste-ready
-  - Les remèdes aux pannes connues (eth0 manquant, auth perdu, port :8123 squatté…)
-  - Le backup `C:\ha-showcase-config\` avec instructions de restauration
-- [ ] **3.4** Répétition à blanc filmée (smartphone) pour identifier les passages flous et chronométrer (cible 8-10 min).
-- [ ] **3.5** Préparer 3-4 questions probables du jury et les réponses :
-  - *« Pourquoi pas une approche par règles fixes ? »* → flexibilité, adaptation à de nouveaux contextes sans recoder.
-  - *« Comment scale à 300 entités ? »* → registry dynamique HA déjà câblé, à tester sur volume.
-  - *« Sécurité du token HA ? »* → variable d'env, jamais commit, scope long-lived.
-  - *« Pourquoi Ollama local plutôt qu'une API cloud ? »* → privacy + latence + offline-capable + pas de coût.
+### 2.4 — Visualization
+- [ ] Put side-by-side on the screen:
+  - **Browser tab 1**: Chatbox `index.html` (dashboard + chips + schedule banner).
+  - **Browser tab 2**: `localhost:8123` HA Lovelace (Direct Controls + Sensors + Environment Inputs).
+- [ ] Prepare the live "scenario":
+  1. *« What is the living room temperature? »* → chatbox response + HA dashboard match.
+  2. *« Turn on the kitchen light. »* → toggle visible in HA in real time.
+  3. *« Set the temperature to 23 degrees. »* → HA slider moves instantly (via `InputNumber` actuator).
+  4. *« Charge the car to 100% by 7am. »* → 24h bar appears, `Savings: N%`, "▶ Execute" button → live banner and `input_boolean.showcase_car_charger` toggle in HA.
+  5. *« Activate the night scene. »* → test of dynamic NLU via `/api/call_service` (chatbox knows all HA entities).
 
 ---
 
-## Phase 4 — Optionnel post-soutenance
+## Phase 3 — Defense Preparation (D-day)
 
-> *Idées d'amélioration à mentionner en perspectives, à coder seulement si temps disponible.*
+- [ ] **3.1** Slides (5 slides, 7-10 min total):
+  1. **Context & Objectives**: CPS, *ruleless* digital twins (vs fixed rules), MAPE-K, FMU, OWL ontology.
+  2. **Requirements**: energy control (heating / EV charging) under constraints (comfort + budget + off-peak hours).
+  3. **Achievements**: `hacvt_rdt.py` (HA → OWL export), NLU chatbox, optimized scheduler, Energy × Price fitness, HA integration via REST.
+  4. **Live Demo** (3-4 min): 5 phrases in chatbox, show HA reacting, show optimized 24h plan.
+  5. **Conclusion & Perspectives**: real NordPool prices, multi-home, smart-meter integration, horizontal persistence (Influx).
+- [ ] **3.2** Architecture captures (drawio → PNG/SVG) for slides:
+  - `Diagrams/framework_architecture.drawio` → export as PNG.
+  - `Diagrams/inference_algorithm_phase_1.drawio` and `..._phase_2.drawio` to explain reasoning.
+- [ ] **3.3** Create a **`DEMO_SETUP.md`** at the repo root, containing:
+  - [Quick-start](#quick-start) commands in copy-paste-ready format
+  - Remedies for known failures (missing eth0, lost auth, squatted :8123 port…)
+  - `C:\ha-showcase-config\` backup with restoration instructions
+- [ ] **3.4** Filmed dry run (smartphone) to identify blurry parts and check timing (target 8-10 min).
+- [ ] **3.5** Prepare 3-4 likely jury questions and answers:
+  - *« Why not a fixed rules approach? »* → flexibility, adaptation to new contexts without recoding.
+  - *« How to scale to 300 entities? »* → dynamic HA registry already wired, test on volume.
+  - *« HA token security? »* → env variable, never committed, long-lived scope.
+  - *« Why local Ollama instead of a cloud API? »* → privacy + latency + offline-capable + no cost.
 
-- [ ] Remplacer `FakepoolSensor` par un lecteur de prix NordPool **réels** (CSV ou API `nordpool-api.com`). Génère des économies de 15-25 % visibles, beaucoup plus convaincant.
-- [ ] Persistance des schedules (sérialisation JSON dans `state-data/schedules.json`) pour survivre au restart SmartNode.
-- [ ] Auto-recovery MAPE-K avec retry exponentiel quand HA redevient joignable.
-- [ ] Petit dashboard graphique (Grafana + InfluxDB) lisant `state-data/` ou MongoDB → courbe énergie / coût / température sur 24 h.
-- [ ] Panneau « Entités » dans le chatbox listant tout ce que le NLU peut piloter (discoverability).
-- [ ] Validation `entity_id` côté SmartNode contre `HomeAssistantRegistry` pour éviter les hallucinations LLM.
-- [ ] Tests d'intégration end-to-end (HA mock + scheduler) pour CI.
+---
+
+## Phase 4 — Optional Post-Defense
+
+> *Improvement ideas to mention in perspectives, code only if time available.*
+
+- [ ] Replace `FakepoolSensor` with **real** NordPool price reader (CSV or `nordpool-api.com` API). Generates visible 15-25% savings, much more convincing.
+- [ ] Schedule persistence (JSON serialization in `state-data/schedules.json`) to survive SmartNode restart.
+- [ ] MAPE-K auto-recovery with exponential retry when HA becomes reachable again.
+- [ ] Small graphical dashboard (Grafana + InfluxDB) reading `state-data/` or MongoDB → energy / cost / temperature curve over 24h.
+- [ ] "Entities" panel in the chatbox listing everything the NLU can control (discoverability).
+- [ ] `entity_id` validation on SmartNode side against `HomeAssistantRegistry` to avoid LLM hallucinations.
+- [ ] End-to-end integration tests (HA mock + scheduler) for CI.
 
 ---
 
 ## Quick-start
 
-> *À copier-coller dans une session PowerShell propre. Ne nécessite aucune édition de code.*
+> *To be copied and pasted into a clean PowerShell session. Requires no code editing.*
 
 ```powershell
-# 1. Containers requis
+# 1. Required containers
 docker start ha-instance      # HA showcase, port 8123
-docker start jarvis-ollama    # LLM local, port 11434
-# (optionnel) docker start mongo-rdt   # case-based reasoning
+docker start jarvis-ollama    # Local LLM, port 11434
+# (optional) docker start mongo-rdt   # case-based reasoning
 
-# 2. Vérifier que ha-instance a bien une IP (parfois eth0 manquant après wsl shutdown)
+# 2. Verify ha-instance has an IP (sometimes eth0 missing after wsl shutdown)
 docker exec ha-instance ip -4 addr show eth0
-# Si erreur "no eth0" :
+# If "no eth0" error:
 #   docker stop ha-instance
 #   docker network connect bridge ha-instance
 #   docker start ha-instance
 
-# 3. Token HA (à exporter à chaque nouvelle session PS)
-$env:TOKEN_HA = "<token_long_lived_HA>"
+# 3. HA Token (to be exported in each new PS session)
+$env:TOKEN_HA = "<long_lived_HA_token>"
 
-# 4. Lancer SmartNode
+# 4. Launch SmartNode
 cd C:\dev\ruleless-digital-twins\SmartNode\SmartNode
 dotnet run
 
-# 5. Ouvrir le chatbox (autre fenêtre)
+# 5. Open the chatbox (other window)
 start C:\dev\ruleless-digital-twins\SmartNode\SmartNode\index.html
 ```
 
-Vérifications rapides :
+Quick verifications:
 ```powershell
-# SmartNode répond
+# SmartNode responds
 Invoke-RestMethod http://localhost:8080/api/entities
 
-# HA répond avec auth valide
+# HA responds with valid auth
 Invoke-RestMethod -Headers @{Authorization="Bearer $env:TOKEN_HA"} http://localhost:8123/api/states `
   | Group-Object {$_.entity_id.Split('.')[0]} | Select Name, Count
 
-# Ollama prêt
+# Ollama ready
 (Invoke-RestMethod http://localhost:11434/api/tags).models | Select-Object name
 ```
 
 ---
 
-## Critères de succès démo
+## Success Criteria
 
-À la fin de la soutenance, on doit avoir prouvé chaque point :
+At the end of the defense, we must have proven each point:
 
-- [ ] **Chatbox dialogue** en français, comprend des phrases naturelles, répond pertinent
-- [ ] **Au moins 1 ordre direct** allume / éteint une vraie entité HA → toggle visible en live dans Lovelace
-- [ ] **Au moins 1 plan optimisé** affiche barre 24 h + coût + % d'économies, peut être exécuté → toggle réel toutes les 60 s en mode démo
-- [ ] **Inference engine** : montrer le JAR exécuté en standalone, comparer instance vs inferred TTL
-- [ ] **Simulation FMU** : logs MAPE-K Plan visibles, expliquer la look-ahead window
-- [ ] **Persistance** : ouvrir `state-data/` et exhiber les fichiers de cycles
-- [ ] **Aucun crash** pendant la démo live (5 min ininterrompus)
+- [ ] **Chatbox dialogues** in English, understands natural phrases, responds pertinently
+- [ ] **At least 1 direct command** turns on / off a real HA entity → toggle visible live in Lovelace
+- [ ] **At least 1 optimized plan** displays 24h bar + cost + % savings, can be executed → real toggle every 60s in demo mode
+- [ ] **Inference engine**: show the JAR executed in standalone, compare instance vs inferred TTL
+- [ ] **FMU Simulation**: MAPE-K Plan logs visible, explain the look-ahead window
+- [ ] **Persistence**: open `state-data/` and exhibit cycle files
+- [ ] **No crashes** during live 5-min demo
 
 ---
 
-## Annexes
+## Appendices
 
-### Endpoints API SmartNode (port 8080)
+### SmartNode API Endpoints (port 8080)
 
-| Méthode | Path | Rôle |
+| Method | Path | Role |
 |---|---|---|
-| GET | `/api/price` | 24 h de prix NOK/kWh (FakepoolSensor) |
-| GET | `/api/entities` | Capteurs/actuateurs câblés dans Factory |
-| GET | `/api/state` | Lectures live de tous les capteurs Factory |
-| GET | `/api/entities_full` | Cache complet de toutes les entités HA (registry) |
-| GET | `/api/ha/states` | Proxy `/api/states` HA |
-| POST | `/api/actuate` | `{uri, state}` → fire actuateur |
-| POST | `/api/call_service` | `{domain, service, entity_id, data}` → service HA générique |
-| POST | `/api/nlu` | Proxy NLU Ollama avec system prompt enrichi |
-| POST | `/api/target_temp` | Contrainte MAPE-K `FTargetPenalty.TargetValue` |
-| POST | `/api/optimize` | Plan 24 h des heures les moins chères avant deadline |
-| POST | `/api/execute_schedule` | Lance un plan d'actuation sur N « heures » |
-| GET | `/api/schedules` | Plannings actifs |
-| POST | `/api/cancel_schedule` | Annule un planning par ID |
+| GET | `/api/price` | 24h of NOK/kWh prices (FakepoolSensor) |
+| GET | `/api/entities` | Sensors/actuators wired in Factory |
+| GET | `/api/state` | Live readings from all Factory sensors |
+| GET | `/api/entities_full` | Full cache of all HA entities (registry) |
+| GET | `/api/ha/states` | HA `/api/states` proxy |
+| POST | `/api/actuate` | `{uri, state}` → fire actuator |
+| POST | `/api/call_service` | `{domain, service, entity_id, data}` → generic HA service |
+| POST | `/api/nlu` | Ollama NLU proxy with enriched system prompt |
+| POST | `/api/target_temp` | MAPE-K `FTargetPenalty.TargetValue` constraint |
+| POST | `/api/optimize` | 24h plan of cheapest hours before deadline |
+| POST | `/api/execute_schedule` | Launches actuation plan over N "hours" |
+| GET | `/api/schedules` | Active schedules |
+| POST | `/api/cancel_schedule` | Cancels a schedule by ID |
 
-### Fichiers critiques
+### Critical Files
 
-| Fichier | Pourquoi |
+| File | Why |
 |---|---|
-| [SmartNode/SmartNode/Program.cs](SmartNode/SmartNode/Program.cs) | Entrée + endpoints + system prompt NLU |
-| [SmartNode/SmartNode/Factory.cs](SmartNode/SmartNode/Factory.cs) | Câblage URI OWL → impl. concrète (lights, switches, input_number) |
-| [SmartNode/SmartNode/HomeAssistantRegistry.cs](SmartNode/SmartNode/HomeAssistantRegistry.cs) | Cache HA pour le prompt LLM dynamique |
-| [SmartNode/SmartNode/ScheduleManager.cs](SmartNode/SmartNode/ScheduleManager.cs) | Scheduler in-memory paramétrable (mode démo) |
-| [SmartNode/SmartNode/index.html](SmartNode/SmartNode/index.html) | Chatbox complète |
-| [SmartNode/SmartNode/Properties/appsettings.json](SmartNode/SmartNode/Properties/appsettings.json) | Config runtime — `SaveMapekCycleData`, `Environment`, `FitnessSettings` |
-| [SmartNode/Logic/Mapek/MapekManager.cs](SmartNode/Logic/Mapek/MapekManager.cs) | Orchestrateur des 5 phases MAPE-K |
-| [models-and-rules/inference-rules.rules](models-and-rules/inference-rules.rules) | 459 lignes de règles Jena |
-| [models-and-rules/verification-rules.rules](models-and-rules/verification-rules.rules) | 549 lignes de règles de vérification |
-| [ontology/ruleless-digital-twins.ttl](ontology/ruleless-digital-twins.ttl) | Ontologie principale |
+| [SmartNode/SmartNode/Program.cs](SmartNode/SmartNode/Program.cs) | Entry + endpoints + NLU system prompt |
+| [SmartNode/SmartNode/Factory.cs](SmartNode/SmartNode/Factory.cs) | OWL URI wiring → concrete impl. (lights, switches, input_number) |
+| [SmartNode/SmartNode/HomeAssistantRegistry.cs](SmartNode/SmartNode/HomeAssistantRegistry.cs) | HA cache for dynamic LLM prompt |
+| [SmartNode/SmartNode/ScheduleManager.cs](SmartNode/SmartNode/ScheduleManager.cs) | Configurable in-memory scheduler (demo mode) |
+| [SmartNode/SmartNode/index.html](SmartNode/SmartNode/index.html) | Complete chatbox |
+| [SmartNode/SmartNode/Properties/appsettings.json](SmartNode/SmartNode/Properties/appsettings.json) | Runtime config — `SaveMapekCycleData`, `Environment`, `FitnessSettings` |
+| [SmartNode/Logic/Mapek/MapekManager.cs](SmartNode/Logic/Mapek/MapekManager.cs) | Orchestrator of the 5 MAPE-K phases |
+| [models-and-rules/inference-rules.rules](models-and-rules/inference-rules.rules) | 459 lines of Jena rules |
+| [models-and-rules/verification-rules.rules](models-and-rules/verification-rules.rules) | 549 lines of verification rules |
+| [ontology/ruleless-digital-twins.ttl](ontology/ruleless-digital-twins.ttl) | Main ontology |
 
-### Diagrammes utiles pour les slides
+### Useful Diagrams for Slides
 
-| Fichier | Usage |
+| File | Usage |
 |---|---|
-| `Diagrams/framework_architecture.drawio` | Slide 1 — vue système |
-| `Diagrams/inference_algorithm_phase_1.drawio` | Slide 3 — comment ça raisonne |
-| `Diagrams/inference_algorithm_phase_2.drawio` | Slide 3 (suite) |
-| `Diagrams/decision_tree_example.drawio` | Slide 3 — choix d'action |
-| `Diagrams/m370_temperature_curve.png` | Slide 1 ou 3 — exemple physique |
-| `Diagrams/single_optimal_condition.png`, `double-double_optimal_condition.png` | Slide 3 — concept d'OptimalCondition |
-| `Diagrams/ontology-class-diagram.drawio` | Annexe — modèle de domaine |
+| `Diagrams/framework_architecture.drawio` | Slide 1 — system view |
+| `Diagrams/inference_algorithm_phase_1.drawio` | Slide 3 — how it reasons |
+| `Diagrams/inference_algorithm_phase_2.drawio` | Slide 3 (continued) |
+| `Diagrams/decision_tree_example.drawio` | Slide 3 — action choice |
+| `Diagrams/m370_temperature_curve.png` | Slide 1 or 3 — physical example |
+| `Diagrams/single_optimal_condition.png`, `double-double_optimal_condition.png` | Slide 3 — OptimalCondition concept |
+| `Diagrams/ontology-class-diagram.drawio` | Appendix — domain model |
 
 ---
 
-*Dernière mise à jour : avril 2026 (à actualiser avant chaque session de travail).*
+*Last updated: April 2026 (to be updated before each work session).*
