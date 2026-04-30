@@ -660,11 +660,19 @@
                 ? `<br><button class="exec-btn" data-exec-plan="${planId}">▶ Run plan (demo mode: 1h = 1min)</button>`
                 : `<br><span style="color:var(--text-muted);font-size:0.75rem">(Specify a target — e.g. "charge the Tesla..." — to enable execution)</span>`;
 
+            // Day-prefix each chosen slot so a window crossing midnight reads naturally
+            // (e.g. "Today 17:00 / Tomorrow 04:00") instead of being mistaken for a sort glitch.
+            const _today = new Date(); _today.setHours(0,0,0,0);
+            const dayPrefix = (iso) => {
+                const d = new Date(iso); d.setHours(0,0,0,0);
+                const diff = Math.round((d.getTime() - _today.getTime()) / 86400000);
+                return diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : new Date(iso).toLocaleDateString();
+            };
             const slotLines = (plan.chosen_slots && plan.chosen_slots.length)
                 ? '<br>' + plan.chosen_slots.map(s => {
                     const start = new Date(s.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const end   = new Date(s.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    return `&nbsp;&nbsp;• ${start}–${end} — ${s.price.toFixed(2)} ${currency}/kWh`;
+                    return `&nbsp;&nbsp;• ${dayPrefix(s.start)} ${start}–${end} — ${s.price.toFixed(2)} ${currency}/kWh`;
                   }).join('<br>')
                 : '';
 
@@ -691,7 +699,7 @@
                     Bar height ∝ price (range ${minPrice.toFixed(2)}–${maxPrice.toFixed(2)} ${currencyForBars}/kWh). Hover for exact values.
                 </div>
                 <div style="margin-top:8px;font-size:0.85rem;line-height:1.5;">
-                    Chosen hours: <b>${plan.chosen_hours.map(h => h + 'h').join(', ')}</b>${slotLines}<br>
+                    Chosen charging windows:${slotLines}<br>
                     ${actualH}h × ${plan.power_kw} kW → <b>${plan.total_cost_nok} ${currency}</b>${baselineNote}<br>
                     <b style="color:#22c55e">Savings: ${plan.savings_percent}%</b> vs window-avg charge${worstSavingsLine}${budgetLine}
                     ${execBtn}
@@ -742,7 +750,7 @@
                             : '';
                         return `<div class="schedule-row">
                             <span><b>${s.target}</b> <span class="st-${s.status}">${s.status}</span>
-                                ${s.status === 'running' ? ` — h=${s.current_hour}/24 (${progress}%)` : ''}
+                                ${s.status === 'running' ? ` — schedule progress ${s.current_hour}/24h (${progress}%)` : ''}
                             </span>
                             <span><code style="font-size:0.7rem;color:var(--text-muted)">${s.id}</code>${cancelBtn}</span>
                         </div>`;

@@ -625,6 +625,8 @@ Si le bandeau proactif 🔥 est visible : expliquer l'advisory proactif en bonus
 | `MAPE-K loop failed — HTTP API continues` | HA injoignable mais SmartNode tourne | Vérifier `docker ps` (conteneur `ha-instance` up + port 8123) puis attendre le prochain cycle (60 s). |
 | Chatbox dit *SmartNode unreachable* | Port 8080 occupé ou SmartNode crashé | `netstat -ano | findstr :8080` puis Ctrl+C dans la fenêtre `dotnet run` et relancer. |
 
+> **Sur les économies Nord Pool** : les prix réels varient chaque jour. La démo ne vise pas un nombre fixe à 20%. La preuve importante est que l'optimizer sélectionne des fenêtres futures moins chères et reporte les économies à la fois vs *window-average* et vs *peak-hours baseline*.
+
 ### Logs à surveiller pendant la démo
 
 | Log | Phase | Fichier source |
