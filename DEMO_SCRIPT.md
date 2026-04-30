@@ -1,53 +1,53 @@
-# DEMO_SCRIPT.md — Script de soutenance live (5-7 min)
+# DEMO_SCRIPT.md — Live Defense Script (5–7 min)
 
-> Script complet pour la soutenance du stage chez Volker Stolz — semaine du **5 mai 2026**.
-> Format : 8 sections chronométrées, avec **ce qu'on dit** (texte préparé) + **ce qu'on montre** (actions à l'écran) + **plan de secours** si la techno bug.
+> Complete script for the internship defense at Volker Stolz — week of **May 5, 2026**.
+> Format: 8 timed sections, with **what to say** (prepared text) + **what to show** (on-screen actions) + **fallback plan** if the tech fails.
 >
-> Documents voisins : [ROADMAP.md](ROADMAP.md) (vue d'ensemble) · [DEMO_SETUP.md](DEMO_SETUP.md) (lancement) · [readme.md](readme.md) (concepts).
+> Related documents: [ROADMAP.md](ROADMAP.md) (overview) · [DEMO_SETUP.md](DEMO_SETUP.md) (launch) · [readme.md](readme.md) (concepts).
 
 ---
 
-## Sommaire
-- [Avant la soutenance](#avant-la-soutenance)
-- [Vue d'ensemble du timing](#vue-densemble-du-timing)
-- [Section 1 — Contexte du projet](#section-1--contexte-du-projet-0000--0040)
-- [Section 2 — Architecture en 60 secondes](#section-2--architecture-en-60-secondes-0040--0140)
-- [Section 3 — Lancement SmartNode](#section-3--lancement-smartnode-0140--0210)
-- [Section 4 — Démo chatbox + Home Assistant](#section-4--démo-chatbox--home-assistant-0210--0340)
-- [Section 5 — Planification énergétique](#section-5--planification-énergétique-0340--0510)
+## Table of Contents
+- [Before the Defense](#before-the-defense)
+- [Timing Overview](#timing-overview)
+- [Section 1 — Project Context](#section-1--project-context-0000--0040)
+- [Section 2 — Architecture in 60 Seconds](#section-2--architecture-in-60-seconds-0040--0140)
+- [Section 3 — SmartNode Launch](#section-3--smartnode-launch-0140--0210)
+- [Section 4 — Chatbox + Home Assistant Demo](#section-4--chatbox--home-assistant-demo-0210--0340)
+- [Section 5 — Energy Scheduling](#section-5--energy-scheduling-0340--0510)
 - [Section 6 — MAPE-K + OWL + FMU + Jena](#section-6--mape-k--owl--fmu--jena-0510--0610)
-- [Section 7 — Limites connues](#section-7--limites-connues-0610--0640)
-- [Section 8 — Conclusion & perspectives](#section-8--conclusion--perspectives-0640--0700)
-- [Plan B — si une démo plante](#plan-b--si-une-démo-plante)
-- [Q&A préparée](#qa-préparée)
+- [Section 7 — Known Limitations](#section-7--known-limitations-0610--0640)
+- [Section 8 — Conclusion & Perspectives](#section-8--conclusion--perspectives-0640--0700)
+- [Plan B — If a Demo Crashes](#plan-b--if-a-demo-crashes)
+- [Prepared Q&A](#prepared-qa)
 
 ---
 
-## Avant la soutenance
+## Before the Defense
 
-### J-1 (la veille)
-- [ ] Suivre toute la procédure de [DEMO_SETUP.md](DEMO_SETUP.md) à blanc → tout doit marcher en < 5 min depuis machine éteinte
-- [ ] Pré-charger le modèle Ollama : `ollama run qwen2.5-coder:7b "ping"` (puis Ctrl+C)
-- [ ] Vérifier que le scénario complet de la [section 4](#section-4--démo-chatbox--home-assistant-0210--0340) marche
-- [ ] Backup `C:\ha-showcase-config\` zip à portée de main
-- [ ] Slides ouvertes (LibreOffice / PowerPoint) avec captures
+### Day Before (D-1)
+- [ ] Follow the entire [DEMO_SETUP.md](DEMO_SETUP.md) procedure from scratch → everything must work in < 5 min from a cold machine
+- [ ] Pre-load the Ollama model: `ollama run qwen2.5-coder:7b "ping"` (then Ctrl+C)
+- [ ] Verify the full scenario from [Section 4](#section-4--chatbox--home-assistant-demo-0210--0340) works
+- [ ] Backup `C:\ha-showcase-config\` zip ready at hand
+- [ ] Slides open (LibreOffice / PowerPoint) with screenshots
 
-### 30 min avant
-- [ ] Reboot machine → propre, sans fenêtres parasites
-- [ ] Désactiver notifications (Windows Focus mode)
-- [ ] Brancher l'alim, désactiver veille écran
-- [ ] Lancer DEMO_SETUP.md sections 2.1 → 2.5 (containers + dotnet run + chatbox)
-- [ ] Préchauffer Ollama : envoyer une 1re question dans le chatbox pour que le modèle soit en RAM
-- [ ] Ouvrir 3 onglets navigateur :
-  - Onglet 1 : `index.html` (chatbox) — **plein écran**
-  - Onglet 2 : `localhost:8123/lovelace/dev` (HA Lovelace) — connecté avec admin
-  - Onglet 3 : VS Code avec `homeassistant-ha-inferred-DEMO.ttl` ouvert (si Phase 2.2 de ROADMAP faite)
-- [ ] Ouvrir le terminal `dotnet run` et le redimensionner pour qu'il soit visible mais pas dominant
+### 30 Minutes Before
+- [ ] Reboot machine → clean, no stray windows
+- [ ] Disable notifications (Windows Focus mode)
+- [ ] Plug in charger, disable screen sleep
+- [ ] Run DEMO_SETUP.md sections 2.1 → 2.5 (containers + dotnet run + chatbox)
+- [ ] Warm up Ollama: send an initial question in the chatbox to load the model into RAM
+- [ ] Open 3 browser tabs:
+  - Tab 1: `index.html` (chatbox) — **full screen**
+  - Tab 2: `localhost:8123/lovelace/dev` (HA Lovelace) — logged in as admin
+  - Tab 3: VS Code with `homeassistant-ha-inferred-DEMO.ttl` open (if ROADMAP Phase 2.2 done)
+- [ ] Open the `dotnet run` terminal and resize it to be visible but not dominant
 
-### Configuration écran (à régler avant le jury)
+### Screen Layout (set up before the jury arrives)
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│   Onglet navigateur 1 — chatbox (visible toujours)         │
+│   Browser tab 1 — chatbox (always visible)                  │
 │   ┌──────────────┐  ┌─────────────────────────────────┐    │
 │   │              │  │                                 │    │
 │   │   chatbox    │  │   Home Assistant Lovelace      │    │
@@ -56,278 +56,278 @@
 │   └──────────────┘  └─────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
-→ idéalement deux écrans, sinon split window en mosaïque (Windows + flèche).
+→ Ideally two screens, otherwise split window tiling (Windows + arrow).
 
 ---
 
-## Vue d'ensemble du timing
+## Timing Overview
 
-| Section | Durée | Cumulé |
+| Section | Duration | Cumulative |
 |---|---|---|
-| 1. Contexte | 00:40 | 00:40 |
-| 2. Architecture en 60s | 01:00 | 01:40 |
-| 3. Lancement SmartNode (déjà lancé, juste montrer) | 00:30 | 02:10 |
-| 4. Démo chatbox + HA | 01:30 | 03:40 |
-| 5. Planification énergétique | 01:30 | 05:10 |
+| 1. Context | 00:40 | 00:40 |
+| 2. Architecture in 60s | 01:00 | 01:40 |
+| 3. SmartNode launch (already running, just show) | 00:30 | 02:10 |
+| 4. Chatbox + HA demo | 01:30 | 03:40 |
+| 5. Energy scheduling | 01:30 | 05:10 |
 | 6. MAPE-K + OWL + FMU + Jena | 01:00 | 06:10 |
-| 7. Limites connues | 00:30 | 06:40 |
+| 7. Known limitations | 00:30 | 06:40 |
 | 8. Conclusion & perspectives | 00:20 | 07:00 |
 
-> **Cible 7 minutes**. Garder 30 s de marge mentale en supprimant la section 6 si on dérape (la sauter et juste la mentionner).
+> **Target: 7 minutes**. Keep a 30 s mental buffer by skipping Section 6 if running over (skip it and just mention it briefly).
 
 ---
 
-## SECTION 1 — Contexte du projet (00:00 → 00:40)
+## SECTION 1 — Project Context (00:00 → 00:40)
 
-### 🎤 Texte préparé
-> « Bonjour, je vous présente le travail réalisé pendant mon stage chez Volker Stolz, à Western Norway University. Le projet s'appelle **Ruleless Digital Twins** : c'est un système de jumeau numérique pour piloter une maison connectée, mais sans règles d'automation hardcodées comme dans les plateformes classiques.
+### 🎤 Prepared Text
+> "Hello, I'm presenting the work done during my internship at Volker Stolz, at Western Norway University. The project is called **Ruleless Digital Twins**: it's a digital twin system for controlling a connected home, but without hardcoded automation rules like in traditional platforms.
 >
-> Le défi : un appartement moderne, c'est aujourd'hui 50 à 300 entités — lumières, capteurs, prises, thermostats. On veut que le système **comprenne ce qu'on lui demande en langage naturel**, qu'il **anticipe** ce qui va se passer dans la pièce, et qu'il **optimise les coûts** d'énergie avec les prix horaires NordPool. Pas de règles « si X alors Y » écrites à la main : un raisonnement à partir d'une **ontologie OWL** + des **simulations physiques FMU**. »
+> The challenge: a modern apartment today has 50 to 300 entities — lights, sensors, sockets, thermostats. We want the system to **understand natural language requests**, **anticipate** what will happen in the room, and **optimize energy costs** using hourly NordPool prices. No hand-written 'if X then Y' rules: reasoning from an **OWL ontology** + **FMU physical simulations**."
 
-### 🖥️ À l'écran
-- Slide 1 ouverte (titre + diagramme contexte CPS).
-- *Optionnel* : sur la slide, un visuel des prix NordPool oscillant pour amorcer le « pourquoi optimiser ».
+### 🖥️ On Screen
+- Slide 1 open (title + CPS context diagram).
+- *Optional*: on the slide, a visual of oscillating NordPool prices to introduce "why optimize."
 
-### ⚠️ Si stress
-- Si la voix tremble : prendre une respiration entre « comme dans les plateformes classiques » et « Le défi ».
-- Mots-clés à caser : *jumeau numérique*, *ruleless*, *langage naturel*, *NordPool*.
+### ⚠️ If Stressed
+- If voice trembles: take a breath between "like in traditional platforms" and "The challenge."
+- Keywords to mention: *digital twin*, *ruleless*, *natural language*, *NordPool*.
 
 ---
 
-## SECTION 2 — Architecture en 60 secondes (00:40 → 01:40)
+## SECTION 2 — Architecture in 60 Seconds (00:40 → 01:40)
 
-### 🎤 Texte préparé
-> « L'architecture combine 4 briques. (1) **Home Assistant**, dans un conteneur Docker, qui parle aux appareils réels via REST. (2) **SmartNode**, un service .NET 8 que j'ai étendu pendant le stage : il tourne une boucle MAPE-K — Monitor, Analyze, Plan, Execute, Knowledge — toutes les 60 secondes. (3) Une **chatbox web** que j'ai écrite en HTML/JavaScript, qui dialogue avec un LLM local — Ollama qwen2.5-coder — pour interpréter les phrases de l'utilisateur. (4) Et au cœur du raisonnement, un **moteur d'inférence Apache Jena**, qui applique des règles symboliques sur une ontologie SOSA/SSN décrivant la maison.
+### 🎤 Prepared Text
+> "The architecture combines 4 building blocks. (1) **Home Assistant**, in a Docker container, communicating with real devices via REST. (2) **SmartNode**, a .NET 8 service that I extended during the internship: it runs a MAPE-K loop — Monitor, Analyze, Plan, Execute, Knowledge — every 60 seconds. (3) A **web chatbox** that I wrote in HTML/JavaScript, which talks to a local LLM — Ollama qwen2.5-coder — to interpret user phrases. (4) And at the heart of the reasoning, an **Apache Jena inference engine**, which applies symbolic rules on a SOSA/SSN ontology describing the home.
 >
-> Le tout fonctionne **en local**, sans cloud, sans API tierce. Le LLM tourne sur la machine, les données aussi. »
+> Everything runs **locally**, no cloud, no third-party API. The LLM runs on the machine, the data stays local too."
 
-### 🖥️ À l'écran
-- Slide 2 : schéma architecture (export `Diagrams/framework_architecture.drawio` en PNG).
-- Pointer du curseur sur les 4 blocs au moment où ils sont nommés.
+### 🖥️ On Screen
+- Slide 2: architecture diagram (export `Diagrams/framework_architecture.drawio` as PNG).
+- Point the cursor at the 4 blocks as they are named.
 
-### ⚠️ Si stress
-- Ne pas se perdre dans les détails — c'est une vue 60 s, pas la slide MAPE-K détaillée (réservée à la section 6).
-- Si on accélère, ne sauter NI le mot « ruleless » NI « MAPE-K ».
-
----
-
-## SECTION 3 — Lancement SmartNode (01:40 → 02:10)
-
-> *SmartNode est déjà lancé avant la soutenance — on ne fait que le montrer.*
-
-### 🎤 Texte préparé
-> « Voici SmartNode en cours d'exécution. La boucle MAPE-K tourne — vous voyez les cycles passer en temps réel : Monitor lit les capteurs Home Assistant, Knowledge applique les règles d'inférence, Plan simule le futur via une FMU Modelica… On va vite voir ce que ça donne côté utilisateur. »
-
-### 🖥️ À l'écran
-- Glisser la fenêtre **terminal `dotnet run`** au premier plan pendant 10 s.
-- Pointer une ligne `Logic.Mapek.IMapekPlan[0] Running simulation #N` ou `Executed query: SELECT ?...`.
-- Repasser au navigateur.
-
-### ⚠️ Si problème
-- Si le terminal SmartNode est silencieux (pas de logs) → glisser sur la chatbox directement, dire « SmartNode est lancé en arrière-plan, on va l'interroger ».
-- Si le terminal montre une exception en rouge → **ne pas s'attarder**, transition immédiate vers la chatbox.
+### ⚠️ If Stressed
+- Don't get lost in details — this is a 60 s overview, not the detailed MAPE-K slide (reserved for Section 6).
+- If speeding up, do NOT skip the word "ruleless" or "MAPE-K."
 
 ---
 
-## SECTION 4 — Démo chatbox + Home Assistant (02:10 → 03:40)
+## SECTION 3 — SmartNode Launch (01:40 → 02:10)
 
-> *Le moment fort. 3 phrases qui mettent en évidence : (a) la compréhension naturelle, (b) l'action immédiate, (c) la lecture du monde.*
+> *SmartNode is already running before the defense — we just show it.*
 
-### 🎤 Texte préparé (transition)
-> « Voici la chatbox côté gauche, Home Assistant côté droit. Tout ce qui se passe à gauche, on le voit en temps réel à droite. Trois exemples. »
+### 🎤 Prepared Text
+> "Here is SmartNode running. The MAPE-K loop is active — you can see the cycles passing in real time: Monitor reads Home Assistant sensors, Knowledge applies inference rules, Plan simulates the future via a Modelica FMU… Let's quickly see what this looks like from the user's perspective."
 
-### Phrase 1 — Lecture d'état
-**Taper dans la chatbox** : `quelle est la température du salon ?`
+### 🖥️ On Screen
+- Bring the **`dotnet run` terminal** window to the foreground for 10 s.
+- Point to a line like `Logic.Mapek.IMapekPlan[0] Running simulation #N` or `Executed query: SELECT ?...`.
+- Switch back to the browser.
 
-> 🎤 « Première chose : on demande l'état actuel. Le LLM identifie un *query_state*, le SmartNode lit le capteur Home Assistant. Vous voyez la valeur s'afficher : 19,6 degrés, et elle correspond exactement au capteur dans Lovelace à droite. »
-
-🖥️ Pointer le dashboard du chatbox + le sensor `Showcase Living Room Temperature` dans HA.
-
-### Phrase 2 — Ordre direct
-**Taper** : `allume la lumière de la cuisine`
-
-> 🎤 « Maintenant un ordre. Le LLM choisit un *call_service* — `light.turn_on` — avec l'entité `light.showcase_kitchen_light`. SmartNode l'exécute, et… »
-
-🖥️ Attendre 1-2 s. **Montrer le toggle qui change dans HA** (Direct Controls — Kitchen passe à ON, l'icône s'allume).
-
-> 🎤 « C'est instantané. Et notez : je n'ai jamais codé en dur le nom *kitchen_light*. SmartNode découvre dynamiquement les entités HA toutes les 30 secondes et les injecte dans le prompt du LLM. »
-
-### Phrase 3 — Réglage numérique
-**Taper** : `mets la température à 23 degrés`
-
-> 🎤 « Cas plus subtil : un ordre direct sur une valeur numérique. Le LLM extrait `23`, SmartNode pousse la valeur sur le `input_number.showcase_temperature` de HA. Vous voyez le curseur bouger à droite. »
-
-🖥️ **Pointer le slider HA** qui passe de 19,6 → 23.
-
-> 🎤 « Et je tiens à préciser : ce mode-là est un *ordre direct*. Si je voulais que le système optimise — par exemple maintenir 23 °C la nuit au moins cher — c'est un cas différent qu'on va voir dans 30 secondes. »
-
-### ⚠️ Si problème
-- **Si une réponse traîne (> 5 s)** : « Le premier appel charge le modèle Ollama de 4,7 Go en mémoire — c'est le seul lent, après c'est instantané. »
-- **Si HA ne réagit pas** : montrer le terminal SmartNode pour exhiber le log `[CHATBOX] Actuate ...` qui prouve que SmartNode a appelé HA. Possible que HA mette 1-2 s à se rafraîchir côté Lovelace.
-- **Si tout fail** : passer au [Plan B](#plan-b--si-une-démo-plante).
+### ⚠️ If There's a Problem
+- If the SmartNode terminal is silent (no logs) → switch to the chatbox directly, say "SmartNode is running in the background, let's query it."
+- If the terminal shows a red exception → **don't dwell on it**, transition immediately to the chatbox.
 
 ---
 
-## SECTION 5 — Planification énergétique (03:40 → 05:10)
+## SECTION 4 — Chatbox + Home Assistant Demo (02:10 → 03:40)
 
-> *La démo qui « impressionne » — montre l'optimisation et le scheduler.*
+> *The highlight. 3 prompts that demonstrate: (a) natural language understanding, (b) immediate action, (c) world state reading.*
 
-### 🎤 Texte préparé (transition)
-> « Maintenant, le mode optimisé. Pas un ordre immédiat — une *intention* avec une contrainte. C'est ce qui distingue notre approche des plateformes traditionnelles : le système planifie en fonction des prix de l'électricité. »
+### 🎤 Prepared Text (transition)
+> "Here is the chatbox on the left, Home Assistant on the right. Everything that happens on the left, you see in real time on the right. Three examples."
 
-### Action — Lancer un plan
-**Taper** : `charge la voiture à 100% pour 7h du matin`
+### Prompt 1 — State Reading
+**Type in the chatbox**: `what is the living room temperature?`
 
-> 🎤 « Le LLM identifie `optimize_schedule`. Il extrait les paramètres : 7 h de durée, deadline 7 h du matin, target = `CarCharger`, puissance estimée 11 kW. SmartNode interroge la courbe de prix NordPool sur 24 h, sélectionne les 7 heures les moins chères avant la deadline, et retourne un plan visuel. »
+> 🎤 "First: we ask for the current state. The LLM identifies a *query_state*, SmartNode reads the Home Assistant sensor. You see the value displayed: 19.6 degrees, and it matches exactly the sensor in Lovelace on the right."
 
-🖥️ **Attendre l'apparition de la barre 24 h colorée** (verte = heures choisies).
+🖥️ Point to the chatbox dashboard + the sensor `Showcase Living Room Temperature` in HA.
 
-> 🎤 « La barre verte, c'est quand le chargeur sera ON. Coût total estimé, et on voit le pourcentage d'économies par rapport à une charge constante. »
+### Prompt 2 — Direct Command
+**Type**: `turn on the kitchen light`
 
-### Action — Exécuter le plan
-**Cliquer sur le bouton** `▶ Exécuter le plan (mode démo : 1h = 1min)`
+> 🎤 "Now a command. The LLM chooses a *call_service* — `light.turn_on` — with entity `light.showcase_kitchen_light`. SmartNode executes it, and…"
 
-> 🎤 « Et là, le scheduler du SmartNode prend le relais. En mode démo, j'ai compressé 24 heures en 24 minutes — chaque "heure" du plan dure une minute réelle. Le bandeau en haut montre l'avancement. »
+🖥️ Wait 1-2 s. **Show the toggle changing in HA** (Direct Controls — Kitchen switches to ON, the icon lights up).
 
-🖥️ **Pointer le bandeau « ⏱ PLANNINGS »** qui apparaît : `CarCharger running — h=0/24 (0%)`.
+> 🎤 "It's instant. And note: I never hardcoded the name *kitchen_light*. SmartNode dynamically discovers HA entities every 30 seconds and injects them into the LLM prompt."
 
-> 🎤 « Et côté Home Assistant, vous voyez : `input_boolean.showcase_car_charger` qui s'allume **uniquement** pendant les heures planifiées. Le scheduler appelle l'actuateur HA en temps réel, sans intervention de l'utilisateur. »
+### Prompt 3 — Numeric Adjustment
+**Type**: `set the temperature to 23 degrees`
 
-🖥️ **Montrer dans HA le toggle CarCharger qui change**.
+> 🎤 "More subtle case: a direct command on a numeric value. The LLM extracts `23`, SmartNode pushes the value to HA's `input_number.showcase_temperature`. You see the slider move on the right."
 
-> 🎤 « En production, on remplace la simulation par les prix NordPool réels et 1 minute par 1 heure. Le pattern reste identique. »
+🖥️ **Point to the HA slider** moving from 19.6 → 23.
 
-### ⚠️ Si problème
-- **Si Ollama renvoie un mauvais plan** (deadline mal extraite) : utiliser le quick-chip `🚗 Charge Tesla nuit` à la place — il a le même intent en fallback keyword.
-- **Si le scheduler ne fire pas** : montrer la requête `Invoke-RestMethod http://localhost:8080/api/schedules` dans le terminal pour exhiber le plan en mémoire avec `current_hour` qui avance.
+> 🎤 "And I want to clarify: this mode is a *direct command*. If I wanted the system to optimize — for example, maintain 23°C overnight at the cheapest rate — that's a different case we'll see in 30 seconds."
+
+### ⚠️ If There's a Problem
+- **If a response is slow (> 5 s)**: "The first call loads the 4.7 GB Ollama model into memory — that's the only slow one, after that it's instant."
+- **If HA doesn't react**: show the SmartNode terminal to exhibit the log `[CHATBOX] Actuate ...` proving SmartNode called HA. HA may take 1-2 s to refresh on the Lovelace side.
+- **If everything fails**: go to [Plan B](#plan-b--if-a-demo-crashes).
+
+---
+
+## SECTION 5 — Energy Scheduling (03:40 → 05:10)
+
+> *The "impressive" demo — shows optimization and the scheduler.*
+
+### 🎤 Prepared Text (transition)
+> "Now, optimized mode. Not an immediate command — an *intention* with a constraint. This is what sets our approach apart from traditional platforms: the system plans based on electricity prices."
+
+### Action — Launch a Plan
+**Type**: `charge the car to 100% by 7am`
+
+> 🎤 "The LLM identifies `optimize_schedule`. It extracts the parameters: 7 hours duration, 7am deadline, target = `CarCharger`, estimated power 11 kW. SmartNode queries the NordPool price curve over 24 hours, selects the 7 cheapest hours before the deadline, and returns a visual plan."
+
+🖥️ **Wait for the 24-hour colored bar to appear** (green = selected hours).
+
+> 🎤 "The green bar is when the charger will be ON. Estimated total cost, and you can see the savings percentage compared to constant charging."
+
+### Action — Execute the Plan
+**Click the button** `▶ Execute plan (demo mode: 1h = 1min)`
+
+> 🎤 "And now, SmartNode's scheduler takes over. In demo mode, I've compressed 24 hours into 24 minutes — each 'hour' of the plan lasts one real minute. The banner at the top shows progress."
+
+🖥️ **Point to the "⏱ SCHEDULES" banner** that appears: `CarCharger running — h=0/24 (0%)`.
+
+> 🎤 "And on the Home Assistant side, you see: `input_boolean.showcase_car_charger` turns ON **only** during the planned hours. The scheduler calls the HA actuator in real time, without user intervention."
+
+🖥️ **Show the CarCharger toggle changing in HA**.
+
+> 🎤 "In production, you replace the simulation with real NordPool prices and 1 minute with 1 hour. The pattern stays identical."
+
+### ⚠️ If There's a Problem
+- **If Ollama returns a bad plan** (deadline badly extracted): use the quick-chip `🚗 Charge Tesla overnight` instead — it has the same intent as a fallback keyword.
+- **If the scheduler doesn't fire**: show the request `Invoke-RestMethod http://localhost:8080/api/schedules` in the terminal to exhibit the plan in memory with `current_hour` advancing.
 
 ---
 
 ## SECTION 6 — MAPE-K + OWL + FMU + Jena (05:10 → 06:10)
 
-> *La couche technique. À adapter selon le profil du jury — plus court si jury non-technique.*
+> *The technical layer. Adjust based on jury profile — shorter for non-technical jury.*
 
-### 🎤 Texte préparé
-> « Sous le capot, ce que vous venez de voir mobilise quatre concepts académiques.
+### 🎤 Prepared Text
+> "Under the hood, what you just saw leverages four academic concepts.
 >
-> **MAPE-K** : Monitor / Analyze / Plan / Execute / Knowledge — c'est le pattern d'auto-adaptation des systèmes autonomes. Notre boucle tourne toutes les 60 secondes, et à chaque cycle elle vérifie si les conditions optimales sont satisfaites. Sinon, elle simule plusieurs combinaisons d'actions et choisit la meilleure selon une fonction *fitness*.
+> **MAPE-K**: Monitor / Analyze / Plan / Execute / Knowledge — the self-adaptation pattern for autonomous systems. Our loop runs every 60 seconds, and at each cycle it checks whether optimal conditions are satisfied. If not, it simulates several action combinations and selects the best one according to a *fitness* function.
 >
-> **OWL/SOSA-SSN** : la maison est décrite par une ontologie. Capteurs, actuateurs, propriétés observables, conditions optimales — tout est modélisé en RDF. Ça permet d'ajouter un nouvel équipement sans modifier le code, juste en éditant le `.ttl`.
+> **OWL/SOSA-SSN**: the home is described by an ontology. Sensors, actuators, observable properties, optimal conditions — everything is modeled in RDF. This allows adding a new device without modifying the code, just by editing the `.ttl`.
 >
-> **FMU/Modelica** : pour la phase Plan, on simule physiquement la pièce — les transferts de chaleur, l'effet du chauffage. On utilise des modèles Functional Mock-up Units générés par OpenModelica. Ça donne au système une **vision du futur** sans agir sur le monde réel.
+> **FMU/Modelica**: for the Plan phase, we physically simulate the room — heat transfers, the effect of heating. We use Functional Mock-up Unit models generated by OpenModelica. This gives the system a **vision of the future** without acting on the real world.
 >
-> **Apache Jena** : le moteur d'inférence symbolique. À chaque cycle Knowledge, le SmartNode fork un processus Java qui applique les 459 lignes de règles d'inférence + 549 lignes de règles de vérification sur le modèle d'instance, et produit un modèle inféré qui contient les déductions — par exemple `meta:isViolated true` pour signaler une condition optimale non respectée. »
+> **Apache Jena**: the symbolic inference engine. At each Knowledge cycle, SmartNode forks a Java process that applies 459 lines of inference rules + 549 lines of verification rules on the instance model, and produces an inferred model containing deductions — for example `meta:isViolated true` to flag an unmet optimal condition."
 
-### 🖥️ À l'écran (option A — slide statique)
-- Slide 3 avec les 4 concepts en quadrants + flèches montrant leur interaction.
+### 🖥️ On Screen (option A — static slide)
+- Slide 3 with the 4 concepts in quadrants + arrows showing their interaction.
 
-### 🖥️ À l'écran (option B — montrer les règles Jena en live)
-- Si tu as le temps : ouvrir VS Code avec `models-and-rules/inference-rules.rules`, montrer 1 règle pendant 5 s, expliquer brièvement.
-- Sinon : se contenter de la slide.
+### 🖥️ On Screen (option B — show Jena rules live)
+- If you have time: open VS Code with `models-and-rules/inference-rules.rules`, show 1 rule for 5 s, explain briefly.
+- Otherwise: stick with the slide.
 
-### ⚠️ Si on déborde
-- **Sauter cette section entièrement**. La transition naturelle : « Sous le capot, on combine MAPE-K, ontologie OWL et simulation FMU — je peux détailler en questions si vous voulez. »
+### ⚠️ If Running Over
+- **Skip this section entirely**. Natural transition: "Under the hood, we combine MAPE-K, OWL ontology, and FMU simulation — I can go into detail during questions if you'd like."
 
 ---
 
-## SECTION 7 — Limites connues (06:10 → 06:40)
+## SECTION 7 — Known Limitations (06:10 → 06:40)
 
-> *Honnêteté > marketing. Le jury apprécie la lucidité.*
+> *Honesty > marketing. The jury appreciates lucidity.*
 
-### 🎤 Texte préparé
-> « Trois limites importantes, que j'assume :
+### 🎤 Prepared Text
+> "Three important limitations, which I acknowledge:
 >
-> **D'abord**, les prix utilisés en démo sont simulés — la courbe est volontairement plate, donc les économies affichées (2 à 4 %) sont sous-estimées. En branchant les vrais prix NordPool, on attend 15 à 25 % d'économies sur la charge d'un véhicule électrique.
+> **First**, the prices used in the demo are simulated — the curve is intentionally flat, so the displayed savings (2 to 4%) are underestimated. With real NordPool prices, we expect 15 to 25% savings on EV charging.
 >
-> **Ensuite**, les plannings ne survivent pas à un redémarrage du SmartNode — ils sont stockés en mémoire vive. Pour une mise en production, il faut sérialiser dans un fichier ou une base.
+> **Second**, the schedules don't survive a SmartNode restart — they're stored in RAM. For production deployment, serialization to a file or database is needed.
 >
-> **Enfin**, le LLM peut occasionnellement halluciner un nom d'entité qui n'existe pas. Aujourd'hui SmartNode laisse passer et l'erreur remonte au call HA. La prochaine étape, c'est valider l'`entity_id` retourné contre le registry avant exécution. »
+> **Third**, the LLM can occasionally hallucinate an entity name that doesn't exist. Currently SmartNode lets it through and the error surfaces from the HA call. The next step is to validate the returned `entity_id` against the registry before execution."
 
-### 🖥️ À l'écran
-- Slide 4 : les 3 limites en bullets.
+### 🖥️ On Screen
+- Slide 4: the 3 limitations as bullet points.
 
 ---
 
-## SECTION 8 — Conclusion & perspectives (06:40 → 07:00)
+## SECTION 8 — Conclusion & Perspectives (06:40 → 07:00)
 
-### 🎤 Texte préparé
-> « En résumé, on a un jumeau numérique fonctionnel qui combine raisonnement symbolique — Jena + OWL — et numérique — FMU + LLM —, piloté en langage naturel, sans cloud.
+### 🎤 Prepared Text
+> "In summary, we have a functional digital twin that combines symbolic reasoning — Jena + OWL — and numerical reasoning — FMU + LLM —, controlled via natural language, without cloud.
 >
-> Trois pistes pour la suite : intégrer un compteur intelligent réel, scaler à plusieurs foyers pour de l'effacement coordonné, et mesurer empiriquement l'écart entre la planification et la consommation observée.
+> Three avenues for future work: integrate a real smart meter, scale to multiple households for coordinated demand response, and empirically measure the gap between planning and observed consumption.
 >
-> Merci. »
+> Thank you."
 
-### 🖥️ À l'écran
-- Slide 5 : conclusion + perspectives.
-- Laisser la slide affichée pendant les questions.
+### 🖥️ On Screen
+- Slide 5: conclusion + perspectives.
+- Leave the slide displayed during questions.
 
 ---
 
-## Plan B — si une démo plante
+## Plan B — If a Demo Crashes
 
-| Panne | Symptôme | Réaction immédiate |
+| Failure | Symptom | Immediate Reaction |
 |---|---|---|
-| Chatbox ne répond plus | Pastille rouge ou pas de réponse | « Je vais redémarrer le service en arrière-plan » → ne PAS le faire en live, passer au point suivant |
-| HA ne réagit pas | Toggle ne bouge pas dans Lovelace | Pointer le terminal SmartNode pour montrer le log `[CHATBOX] Actuate ...`, dire « la commande est partie, le rendu HA peut traîner » |
-| Ollama timeout | Pas de réponse > 10 s | Le fallback keyword s'active automatiquement → continuer comme si de rien n'était |
-| `dotnet run` crash | Stack trace rouge | Ouvrir [DEMO_SETUP.md](DEMO_SETUP.md) section 4.6 mentalement → en pratique, dire « je vais montrer la suite via les slides », passer en slides uniquement |
-| Tout est cassé | Catastrophe | Passer immédiatement aux **slides** + capture d'écran de la démo enregistrée la veille (toujours avoir une vidéo de backup MP4 prête) |
+| Chatbox stops responding | Red dot or no response | "I'll restart the service in the background" → do NOT actually do it live, move to the next point |
+| HA doesn't react | Toggle doesn't move in Lovelace | Point to the SmartNode terminal to show the log `[CHATBOX] Actuate ...`, say "the command was sent, the HA render may lag" |
+| Ollama timeout | No response > 10 s | The fallback keyword activates automatically → continue as if nothing happened |
+| `dotnet run` crash | Red stack trace | Mentally open [DEMO_SETUP.md](DEMO_SETUP.md) Section 4.6 → in practice, say "I'll show the rest via slides", switch to slides only |
+| Everything is broken | Catastrophe | Switch immediately to **slides** + screenshot of the demo recorded the day before (always have a backup MP4 video ready) |
 
-> **Règle d'or** : ne JAMAIS rester bloqué plus de 10 secondes sur une erreur. Continuer, expliquer le concept à la voix, revenir sur la techno seulement si elle revient seule.
+> **Golden rule**: NEVER stay stuck on an error for more than 10 seconds. Continue, explain the concept verbally, come back to the tech only if it recovers on its own.
 
-### Vidéo de backup
-- Enregistrer J-1 une vidéo MP4 de **toute la démo** (sections 4 + 5) avec OBS Studio ou Xbox Game Bar.
-- La garder dans un onglet ouvert : `file:///C:/dev/demo-backup.mp4`.
-- En cas de panne sévère : *« Je vais vous montrer le déroulé via la captation que j'ai préparée. »* — bascule sur la vidéo, continue le script à la voix.
-
----
-
-## Q&A préparée
-
-> Questions probables du jury et réponses calibrées (1-2 phrases max chacune).
-
-### Sur l'architecture
-- **« Pourquoi ne pas utiliser un cloud LLM type GPT-4 ? »**
-  > « Pour la latence, la confidentialité — les données de la maison ne sortent pas — et le coût zéro à l'usage. Ollama tourne sur la machine, qwen2.5-coder fait 4,7 Go et répond en 1-2 secondes. »
-- **« Pourquoi MAPE-K et pas une simple boucle de contrôle ? »**
-  > « MAPE-K sépare proprement la perception, le raisonnement et l'action. Ça nous permet de plug différentes méthodes de planification — simulation FMU aujourd'hui, RL demain — sans toucher au reste. »
-- **« Pourquoi une ontologie OWL et pas une simple base SQL ? »**
-  > « Parce qu'on raisonne sur les *relations* — un capteur observe une propriété, une action affecte une propriété — et pas juste sur des valeurs. Avec Jena, on peut déduire qu'une OptimalCondition est violée *avant même* qu'elle le soit en réel. »
-
-### Sur la techno
-- **« Et si je rajoute 200 entités HA ? »**
-  > « Le registry refresh dynamiquement et injecte la liste dans le prompt. Aujourd'hui ça tient en contexte. Au-delà de 500, il faudrait filtrer par domaine ou pré-classer la requête. »
-- **« Comment vous gérez les conflits — deux ordres opposés ? »**
-  > « Pour les ordres directs immédiats, le dernier gagne. Pour les plans optimisés, le scheduler conserve un seul plan actif par target — un nouveau plan annule l'ancien. »
-- **« Sécurité du token Home Assistant ? »**
-  > « Variable d'environnement, jamais committée, scope long-lived révocable depuis HA. Pour la prod, on passerait à OAuth 2.0. »
-
-### Sur la valeur
-- **« Quel gain réel pour l'utilisateur final ? »**
-  > « Sur la charge d'un VE en heures creuses NordPool, 15 à 25 % d'économies. Sur le chauffage avec planification J+1, on tablait sur 8-12 % d'après la littérature, à valider empiriquement. »
-- **« Pourquoi *ruleless* plutôt qu'un système expert ? »**
-  > « Parce que les règles "si X alors Y" ne tiennent pas la route sur 300 entités hétérogènes. Notre système raisonne sur le modèle, pas sur des recettes câblées. »
-
-### Sur les limites
-- **« Que se passe-t-il si Home Assistant tombe ? »**
-  > « SmartNode catche l'exception, l'API HTTP reste vivante pour le chatbox, le MAPE-K loop s'arrête. Au retour de HA, il faut redémarrer SmartNode — ou ajouter du retry, ce qui est dans la roadmap. »
-- **« Validation expérimentale ? »**
-  > « C'est la prochaine étape — instrumenter une vraie maison sur 2-3 semaines, comparer planification vs consommation observée. Demande un compteur smart-meter, pas dans le périmètre du stage. »
+### Backup Video
+- Record on D-1 an MP4 video of **the entire demo** (Sections 4 + 5) with OBS Studio or Xbox Game Bar.
+- Keep it in an open tab: `file:///C:/dev/demo-backup.mp4`.
+- In case of severe failure: *"I'll show you the walkthrough via the recording I prepared."* — switch to the video, continue the script verbally.
 
 ---
 
-## Phrases-clés à placer (mémo)
+## Prepared Q&A
 
-À glisser au moins une fois pendant la démo :
-- ✅ **« ruleless »** (le mot-clé du projet)
-- ✅ **« en local, sans cloud »** (différenciateur fort)
-- ✅ **« MAPE-K »** (l'ancrage académique)
-- ✅ **« ontologie SOSA/SSN »** (la rigueur sémantique)
-- ✅ **« registry dynamique »** (le mécanisme qui scale)
-- ✅ **« mode démo : 1 heure = 1 minute »** (l'astuce qui rend la démo regardable)
+> Likely jury questions and calibrated answers (1–2 sentences max each).
+
+### On Architecture
+- **"Why not use a cloud LLM like GPT-4?"**
+  > "For latency, privacy — home data never leaves the machine — and zero usage cost. Ollama runs locally, qwen2.5-coder is 4.7 GB and responds in 1–2 seconds."
+- **"Why MAPE-K and not a simple control loop?"**
+  > "MAPE-K cleanly separates perception, reasoning, and action. It allows us to plug different planning methods — FMU simulation today, RL tomorrow — without touching the rest."
+- **"Why an OWL ontology and not a simple SQL database?"**
+  > "Because we reason about *relationships* — a sensor observes a property, an action affects a property — not just values. With Jena, we can deduce that an OptimalCondition is violated *before* it actually is in reality."
+
+### On Technology
+- **"What if I add 200 HA entities?"**
+  > "The registry refreshes dynamically and injects the list into the prompt. Today it fits in context. Beyond 500, we'd need to filter by domain or pre-classify the query."
+- **"How do you handle conflicts — two opposite commands?"**
+  > "For immediate direct commands, last one wins. For optimized plans, the scheduler maintains a single active plan per target — a new plan cancels the old one."
+- **"HA token security?"**
+  > "Environment variable, never committed, revocable long-lived scope from HA. For production, we'd move to OAuth 2.0."
+
+### On Value
+- **"What real benefit for the end user?"**
+  > "On EV charging during NordPool off-peak hours, 15 to 25% savings. On heating with day-ahead planning, we projected 8–12% based on the literature, to be validated empirically."
+- **"Why *ruleless* rather than an expert system?"**
+  > "Because 'if X then Y' rules don't scale to 300 heterogeneous entities. Our system reasons over the model, not over hardcoded recipes."
+
+### On Limitations
+- **"What happens if Home Assistant goes down?"**
+  > "SmartNode catches the exception, the HTTP API stays alive for the chatbox, the MAPE-K loop stops. When HA comes back, SmartNode needs a restart — or we add retry logic, which is on the roadmap."
+- **"Experimental validation?"**
+  > "That's the next step — instrument a real home for 2–3 weeks, compare planning vs observed consumption. Requires a smart meter, which was outside the internship scope."
 
 ---
 
-*Bonne soutenance ! 🚀*
+## Key Phrases to Drop (Memo)
 
-*Dernière mise à jour : avril 2026.*
+Mention at least once during the demo:
+- ✅ **"ruleless"** (the project keyword)
+- ✅ **"local, no cloud"** (strong differentiator)
+- ✅ **"MAPE-K"** (the academic anchor)
+- ✅ **"SOSA/SSN ontology"** (semantic rigor)
+- ✅ **"dynamic registry"** (the mechanism that scales)
+- ✅ **"demo mode: 1 hour = 1 minute"** (the trick that makes the demo watchable)
+
+---
+
+*Good luck with the defense! 🚀*
+
+*Last updated: April 2026.*
