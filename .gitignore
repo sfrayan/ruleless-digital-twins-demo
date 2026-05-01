@@ -420,11 +420,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-# Local-only presentation artefacts (kept out of the repo on purpose)
-SLIDES_DEMO.md
-SLIDES_DEMO.pdf
-SLIDES_DEMO.pptx
-SLIDES_DEMO.html
 
 # --- Public demo cleanup ---
 
@@ -459,12 +454,6 @@ appsettings.Development.local.json
 # Local assistant / scratch files
 .claude/
 *.jsonl
-
-# Local demo/presentation exports
-SLIDES_DEMO.md
-SLIDES_DEMO.pdf
-SLIDES_DEMO.pptx
-SLIDES_DEMO.html
 
 # Temporary demo output
 homeassistant-ha-inferred-DEMO.ttl
